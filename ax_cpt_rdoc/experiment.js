@@ -3,7 +3,57 @@
 /* ************************************ */
 
 function addID() {
-  jsPsych.data.addDataToLastTrial({exp_id: 'ax_cpt_rdoc'})
+	jsPsych.data.get().addToLast({exp_id: 'ax_cpt_rdoc'})
+}
+
+function assessPerformance() {
+	var experiment_data = jsPsych.data.get().filter({exp_stage: 'test', trial_id: 'probe'}).trials
+	var missed_count = 0
+	var trial_count = 0
+	var rt_array = []
+	var rt = 0
+  var correct = 0
+
+	//record choices participants made
+	var choice_counts = {}
+	choice_counts[null] = 0
+	for (var k = 0; k < choices.length; k++) {
+		choice_counts[choices[k]] = 0
+	}
+	for (var i = 0; i < experiment_data.length; i++) {
+    trial_count += 1
+    rt = experiment_data[i].rt
+    key = experiment_data[i].response
+    choice_counts[key] += 1
+    if (rt == null) {
+      missed_count += 1
+    } else {
+      rt_array.push(rt)
+    }
+    if (key == experiment_data[i].correct_response){
+      correct += 1
+    }
+	}
+	//calculate average rt
+	var avg_rt = null
+	if (rt_array.length !== 0) {
+		avg_rt = math.median(rt_array)
+	} 
+	//calculate whether response distribution is okay
+	var responses_ok = true
+	Object.keys(choice_counts).forEach(function(key, index) {
+		if (choice_counts[key] > trial_count * 0.85) {
+			responses_ok = false
+		}
+	})
+	var missed_percent = missed_count/trial_count
+	credit_var = (missed_percent < 0.4 && avg_rt > 200 && responses_ok)
+  var accuracy = correct / trial_count
+	jsPsych.data.addDataToLastTrial({final_credit_var: credit_var,
+									final_missed_percent: missed_percent,
+									final_avg_rt: avg_rt,
+									final_responses_ok: responses_ok,
+									final_accuracy: accuracy})
 }
 
 function evalAttentionChecks() {
@@ -26,38 +76,34 @@ var getChar = function() {
 }
 
 var getInstructFeedback = function() {
-    return '<div class = centerbox><p class = center-block-text>' + feedback_instruct_text +
-      '</p></div>'
-  }
+  return '<div class = centerbox><p class = center-block-text>' + feedback_instruct_text +
+    '</p></div>'
+}
+
   /* ************************************ */
   /* Define experimental variables */
   /* ************************************ */
+
   // generic task variables
+var instructTimeThresh = 0 ///in seconds
 var run_attention_checks = true
 var attention_check_thresh = 0.65
-var sumInstructTime = 0 //ms
-var instructTimeThresh = 0 ///in seconds
 
 // task specific variables
-var possible_responses = [['index finger', 188, 'comma key (,)'], ['middle finger', 190, 'period key (.)']]
+var possible_responses = [['index finger', ',', 'comma key (,)'], ['middle finger', '.', 'period key (.)']] // [instruct_name, key_code, key_description]
+var choices = choices
 
 var chars = 'BCDEFGHIJLMNOPQRSTUVWZ'
 var trial_proportions = ["AX", "AX", "AX", "AX", "AX", "AX", "AX", "BX", "AY", "BY"]
-var block1_list = jsPsych.randomization.repeat(trial_proportions, 4)
-var block2_list = jsPsych.randomization.repeat(trial_proportions, 4)
-var block3_list = jsPsych.randomization.repeat(trial_proportions, 4)
-var blocks = [block1_list, block2_list, block3_list]
-
-var practice_proportions = ["AX", "AX", "AX", "BX", "AY", "BY"] // change this to trial_proportions?
-var practice_block_list = jsPsych.randomization.repeat(practice_proportions, 1) // change this to change practice length
-
-var speed_reminder = '<p class = block-text>Try to respond as quickly as possible without sacrificing accuracy.</p>'
+var practice_proportions = ["AX", "AX", "AX", "BX", "AY", "BY"]
 
 //rule reminder for practice
 var prompt_text = '<div class = prompt_box>'+
             '<p class = center-block-text style = "font-size:16px; line-height:80%%;">A -> X: ' + possible_responses[0][0]+'</li>' +
             '<p class = center-block-text style = "font-size:16px; line-height:80%%;">Anything else: ' + possible_responses[1][0] +'</li>' +
           '</div>'
+var speed_reminder = '<p class = block-text>Try to respond as quickly and accurately as possible.</p>'
+
 
 /* ************************************ */
 /* Set up jsPsych blocks */
@@ -71,79 +117,75 @@ var attention_check_block = {
   timing_response: 180000,
   response_ends_trial: true,
   timing_post_trial: 200
-}
+};
 
 var attention_node = {
   timeline: [attention_check_block],
   conditional_function: function() {
     return run_attention_checks
   }
-}
+};
 
 //Set up post task questionnaire
 var post_task_block = {
-   type: 'survey-text',
+   type: jsPsychSurveyText,
    data: {
-       trial_id: "post task questions"
+      exp_id: "ax_cpt_rdoc",
+      trial_id: "post task questions"
    },
-   questions: ['<p class = center-block-text style = "font-size: 20px">Please summarize what you were asked to do in this task.</p>',
-              '<p class = center-block-text style = "font-size: 20px">Do you have any comments about this task?</p>'],
-   rows: [15, 15],
-   columns: [60,60]
+   questions: [
+    {
+      prompt: '<p class = center-block-text style = "font-size: 20px">Please summarize what you were asked to do in this task.</p>',
+      rows: 15,
+      columns: 60,
+    },
+    {
+      prompt: '<p class = center-block-text style = "font-size: 20px">Do you have any comments about this task?</p>',
+      rows: 15,
+      columns: 60,
+   }
+  ]
 };
-
 
 /* define static blocks */
 var end_block = {
-  type: 'poldrack-text',
-  timing_response: 180000,
+  type: jsPsychHtmlKeyboardResponse,
+  trial_duration: 180000,
   data: {
     exp_id: "ax_cpt_rdoc",
     trial_id: "end"
   },
-  text: '<div class = centerbox><p class = center-block-text>Thanks for completing this task!</p><p class = center-block-text>Press <i>enter</i> to continue.</p></div>',
-  cont_key: [13],
-  timing_post_trial: 0
+  stimulus: '<div class = centerbox><p class = center-block-text>Thanks for completing this task!</p><p class = center-block-text>Press <i>enter</i> to continue.</p></div>',
+  choices: ['Enter'],
+  post_trial_gap: 0,
+  on_finish: function(){
+    assessPerformance()
+    evalAttentionChecks()
+  }
 };
 
 var feedback_instruct_text =
   '<p class=center-block-text>Welcome! This experiment will take around 5 minutes.</p>' +
   '<p class=center-block-text>To avoid technical issues, please keep the experiment tab (on Chrome or Firefox) active and in full-screen mode for the whole duration of each task.</p>' +
   '<p class=center-block-text> Press <i>enter</i> to begin.</p>'
+
+
 var feedback_instruct_block = {
-  type: 'poldrack-text',
-  cont_key: [13],
-  text: getInstructFeedback,
+  type: jsPsychHtmlKeyboardResponse,
+  choices: ['Enter'],
+  stimulus: getInstructFeedback,
   data: {
-    trial_id: 'instruction'
+    trial_id: 'instruction_feedback'
   },
-  timing_post_trial: 0,
-  timing_response: 180000
+  post_trial_gap: 0,
+  trial_duration: 180000
 };
 
-var start_test_block = {
-  type: 'poldrack-text',
-  data: {
-    trial_id: "test_intro"
-  },
-  timing_response: 180000,
-  text: '<div class = centerbox><p class = center-block-text>We will now start the test portion.</p>' + 
-  '<p class = center-block-text>Keep your index finger on the ' + possible_responses[0][2] + ' and your middle finger on the ' +  possible_responses[1][2] + '</p>' + 
-  '<p class = center-block-text>Press <i>enter</i> to begin.</p></div>',
-  cont_key: [13],
-  timing_post_trial: 1000,
-  on_finish: function() {
-    exp_stage = 'test'
-  }
-};
-
-
-/// This ensures that the subject does not read through the instructions too quickly.  If they do it too quickly, then we will go over the loop again.
 var instructions_block = {
-  type: 'poldrack-instructions',
+  type: jsPsychInstructions,
   pages: [
     '<div class = centerbox>'+
-      '<p class=block-text>Place your <b>index finger</b> on the <b>' + possible_responses[0][2] + '</b> and your <b>middle finger</b> on the <b>' + possible_responses[1][2] + '</b> </p>' + 
+      '<p class=block-text>Place your <b>' + possible_responses[0][0] + '</b> on the <b>' + possible_responses[0][2] + '</b> and your <b>' + possible_responses[1][0] + '</b> on the <b>' + possible_responses[1][2] + '</b> </p>' + 
       
       '<p class = block-text>In this task, on each trial you will see a letter presented, a short break, and then a second letter. For instance, you may see "A", which would then disappear to be replaced by "F".</p>' +
       '<p class = block-text>Your task is to respond by pressing a button during the presentation of the <b>second</b> letter. If the first letter was an "A" <b>AND</b> the second letter is an "X", press your <b>' +
@@ -160,16 +202,18 @@ var instructions_block = {
     trial_id: 'instruction'
   },
   show_clickable_nav: true,
-  timing_post_trial: 1000
+  post_trial_gap: 1000
 };
 
+/// This ensures that the subject does not read through the instructions too quickly.  If they do it too quickly, then we will go over the loop again.
+var sumInstructTime = 0 //ms
 var instruction_node = {
   timeline: [feedback_instruct_block, instructions_block],
   /* This function defines stopping criteria */
   loop_function: function(data) {
-    for (i = 0; i < data.length; i++) {
-      if ((data[i].trial_type == 'poldrack-instructions') && (data[i].rt != -1)) {
-        rt = data[i].rt
+    for (i = 0; i < data.trials.length; i++) {
+      if ((data.trials[i].trial_id == 'instruction') && (data.trials[i].rt != -1)) {
+        rt = data.trials[i].rt
         sumInstructTime = sumInstructTime + rt
       }
     }
@@ -177,166 +221,181 @@ var instruction_node = {
       feedback_instruct_text =
         'Read through instructions too quickly.  Please take your time and make sure you understand the instructions.  Press <i>enter</i> to continue.'
       return true
-    } else if (sumInstructTime > instructTimeThresh * 1000) {
+    } else {
       feedback_instruct_text =
         'Done with instructions. Press <i>enter</i> to continue.'
       return false
     }
   }
-}
+};
+
+var start_test_block = {
+  type: jsPsychHtmlKeyboardResponse,
+  data: {
+    trial_id: "test_intro"
+  },
+  trial_duration: 180000,
+  stimulus: '<div class = centerbox><p class = center-block-text>We will now start the test portion.</p>' + 
+  '<p class = center-block-text>Keep your ' + possible_responses[0][0] + ' on the ' + possible_responses[0][2] + ' and your ' + possible_responses[1][0] + ' on the ' +  possible_responses[1][2] + '</p>' + 
+  '<p class = center-block-text>Press <i>enter</i> to begin.</p></div>',
+  choices: ['Enter'],
+  post_trial_gap: 1000,
+  on_finish: function() {
+    exp_stage = 'test'
+  }
+};
 
 var rest_block = {
-  type: 'poldrack-text',
-  timing_response: 180000,
+  type: jsPsychHtmlKeyboardResponse,
+  trial_duration: 180000,
   data: {
     trial_id: "rest"
   },
-  text: '<div class = centerbox><p class = block-text>Take a break! Press any key to continue.</p></div>',
-  timing_post_trial: 1000
+  stimulus: '<div class = centerbox><p class = block-text>Take a break! Press any key to continue.</p></div>',
+  post_trial_gap: 1000
 };
 
 var wait_block = {
-  type: 'poldrack-single-stim',
+  type: jsPsychHtmlKeyboardResponse,
   stimulus: '<div class = centerbox><div class = AX_feedback>Trial over, get ready for the next one.</div></div>',
   is_html: true,
-  choices: 'none',
+  choices: ['NO_KEYS'],
   data: {
     trial_id: "wait"
   },
-  timing_post_trial: 500,
-  timing_stim: 1000,
-  timing_response: 1000
-}
+  post_trial_gap: 500,
+  stimulus_duration: 1000,
+  trial_duration: 1000
+};
 
 var wait_block_practice = {
-  type: 'poldrack-single-stim',
+  type: jsPsychHtmlKeyboardResponse,
   stimulus: '<div class = centerbox><div class = AX_feedback>Trial over, get ready for the next one.</div></div>',
   is_html: true,
-  choices: 'none',
+  choices: ['NO_KEYS'],
   data: {
     trial_id: "wait"
   },
-  timing_post_trial: 0,
-  timing_stim: 1000,
-  timing_response: 1500,
+  post_trial_gap: 0,
+  stimulus_duration: 1000,
+  trial_duration: 1500,
   prompt: prompt_text
-}
-
+};
 
 /* define test block cues and probes*/
 var A_cue = {
-  type: 'poldrack-single-stim',
+  type: jsPsychHtmlKeyboardResponse,
   stimulus: '<div class = centerbox><div class = AX_text>A</div></div>',
   is_html: true,
-  choices: 'none',
+  choices: ['NO_KEYS'],
   data: {
     trial_id: "cue",
     exp_stage: "test"
   },
-  timing_stim: 300,
-  timing_response: 5200,
+  stimulus_duration: 300,
+  trial_duration: 5200,
   response_ends_trial: false,
-  timing_post_trial: 0
+  post_trial_gap: 0
 };
 
 var other_cue = {
-  type: 'poldrack-single-stim',
+  type: jsPsychHtmlKeyboardResponse,
   stimulus: getChar,
   is_html: true,
-  choices: 'none',
+  choices: ['NO_KEYS'],
   data: {
     trial_id: "cue",
     exp_stage: "test"
   },
-  timing_stim: 300,
-  timing_response: 5200,
+  stimulus_duration: 300,
+  trial_duration: 5200,
   response_ends_trial: false,
-  timing_post_trial: 0
+  post_trial_gap: 0
 };
 
 var X_probe = {
-  type: 'poldrack-single-stim',
+  type: jsPsychHtmlKeyboardResponse,
   stimulus: '<div class = centerbox><div class = AX_text>X/div></div>',
   is_html: true,
-  choices: [possible_responses[0][1], possible_responses[1][1]],
+  choices: choices,
   data: {
     trial_id: "probe",
     exp_stage: "test",
     correct_response: possible_responses[0][1],
   },
-  timing_stim: 300,
-  timing_response: 1300,
+  stimulus_duration: 300,
+  trial_duration: 1300,
   response_ends_trial: false,
-  timing_post_trial: 0,
+  post_trial_gap: 0,
   on_finish: function(data) {
     correct_trial = 0
-    if (data.key_press == data.correct_response) {
+    if (data.response == data.correct_response) {
       correct_trial = 1
     }
-    jsPsych.data.addDataToLastTrial({correct_trial: correct_trial})
+    jsPsych.data.get().addToLast({correct_trial: correct_trial})
   }
 };
 
 var other_probe = {
-  type: 'poldrack-single-stim',
+  type: jsPsychHtmlKeyboardResponse,
   stimulus: getChar,
   is_html: true,
-  choices: [possible_responses[0][1], possible_responses[1][1]],
+  choices: choices,
   data: {
     trial_id: "probe",
     exp_stage: "test",
     correct_response: possible_responses[1][1]
   },
-  timing_stim: 300,
-  timing_response: 1300,
+  stimulus_duration: 300,
+  trial_duration: 1300,
   response_ends_trial: false,
-  timing_post_trial: 0,
+  post_trial_gap: 0,
   on_finish: function(data) {
     correct_trial = 0
-    if (data.key_press == data.correct_response) {
+    if (data.response == data.correct_response) {
       correct_trial = 1
     }
-    jsPsych.data.addDataToLastTrial({correct_trial: correct_trial})
+    jsPsych.data.get().addToLast({correct_trial: correct_trial})
   }
 };
 
 var practice_A_cue = {
-  type: 'poldrack-single-stim',
+  type: jsPsychHtmlKeyboardResponse,
   stimulus: '<div class = centerbox><div class = AX_text>A</div></div>',
   is_html: true,
-  choices: 'none',
+  choices: ['NO_KEYS'],
   data: {
     trial_id: "cue",
-    exp_stage: "practice"
+    exp_stage: "test"
   },
-  timing_stim: 300,
-  timing_response: 5200,
+  stimulus_duration: 300,
+  trial_duration: 5200,
   response_ends_trial: false,
-  timing_post_trial: 0,
+  post_trial_gap: 0,
   prompt: prompt_text,
 };
 
 var practice_other_cue = {
-  type: 'poldrack-single-stim',
+  type: jsPsychHtmlKeyboardResponse,
   stimulus: getChar,
   is_html: true,
-  choices: 'none',
+  choices: ['NO_KEYS'],
   data: {
     trial_id: "cue",
-    exp_stage: "practice "
+    exp_stage: "test"
   },
-  timing_stim: 300,
-  timing_response: 5200,
+  stimulus_duration: 300,
+  trial_duration: 5200,
   response_ends_trial: false,
-  timing_post_trial: 0,
+  post_trial_gap: 0,
   prompt: prompt_text,
 };
 
 var practice_X_probe = {
-  type: 'poldrack-categorize',
+  type: jsPsychCategorizeHtml,
   stimulus: '<div class = centerbox><div class = AX_text>X</div></div>',
   is_html: true,
-  choices: [possible_responses[0][1], possible_responses[1][1]],
+  choices: choices,
   key_answer: possible_responses[0][1], //correct response
   correct_text: '<div class = fb_box><div class = center-text><font size = 20>Correct!</font></div></div>' + prompt_text,
   incorrect_text: '<div class = fb_box><div class = center-text><font size = 20>Incorrect</font></div></div>' + prompt_text,
@@ -345,27 +404,23 @@ var practice_X_probe = {
     trial_id: "probe",
     exp_stage: "practice",
   },
-  timing_feedback_duration: 500, //500
-  timing_stim: 300, //1000
+  feedback_duration: 500, //500
+  stimulus_duration: 300, //1000
   show_stim_with_feedback: false,
   response_ends_trial: false,
-  timing_response: 1300, //2000
-  timing_post_trial: 0,
+  trial_duration: 1300, //2000
+  post_trial_gap: 0,
   prompt: prompt_text,
   on_finish: function(data) {
-    correct_trial = 0
-    if (data.key_press == data.correct_response) {
-      correct_trial = 1
-    }
-    jsPsych.data.addDataToLastTrial({correct_trial: correct_trial})
+    jsPsych.data.get().addToLast({correct_trial: + data.correct})
   }
-}
+};
 
 var practice_other_probe = {
-  type: 'poldrack-categorize',
+  type: jsPsychCategorizeHtml,
   stimulus: getChar,
   is_html: true,
-  choices: [possible_responses[0][1], possible_responses[1][1]],
+  choices: choices,
   key_answer: possible_responses[1][1], //correct response
   correct_text: '<div class = fb_box><div class = center-text><font size = 20>Correct!</font></div></div>' + prompt_text,
   incorrect_text: '<div class = fb_box><div class = center-text><font size = 20>Incorrect</font></div></div>' + prompt_text,
@@ -374,101 +429,105 @@ var practice_other_probe = {
     trial_id: "probe",
     exp_stage: "practice",
   },
-  timing_feedback_duration: 500, //500
-  timing_stim: 300, //1000
+  feedback_duration: 500, //500
+  stimulus_duration: 300, //1000
   show_stim_with_feedback: false,
   response_ends_trial: false,
-  timing_response: 1300, //2000
-  timing_post_trial: 0,
+  trial_duration: 1300, //2000
+  post_trial_gap: 0,
   prompt: prompt_text,
   on_finish: function(data) {
-    correct_trial = 0
-    if (data.key_press == data.correct_response) {
-      correct_trial = 1
-    }
-    jsPsych.data.addDataToLastTrial({correct_trial: correct_trial})
+    jsPsych.data.get().addToLast({correct_trial: + data.correct})
   }
-}
+};
 
 /* ************************************ */
 /* Set up experiment */
 /* ************************************ */
 
 var ax_cpt_rdoc_experiment = []
-ax_cpt_rdoc_experiment.push(instruction_node);
+var ax_cpt_rdoc_init = () => {
+  var block1_list = jsPsych.randomization.repeat(trial_proportions, 4)
+  var block2_list = jsPsych.randomization.repeat(trial_proportions, 4)
+  var block3_list = jsPsych.randomization.repeat(trial_proportions, 4)
+  var blocks = [block1_list, block2_list, block3_list]
+  var practice_block_list = jsPsych.randomization.repeat(practice_proportions, 1) // change this to change practice length
 
-// add practice
-for (i = 0; i < practice_block_list.length; i++) {
-  switch (practice_block_list[i]) {
-    case "AX":
-      cue = jQuery.extend(true, {}, practice_A_cue)
-      probe = jQuery.extend(true, {}, practice_X_probe)
-      cue.data.condition = "AX"
-      probe.data.condition = "AX"
-      break;
-    case "BX":
-      cue = jQuery.extend(true, {}, practice_other_cue)
-      probe = jQuery.extend(true, {}, practice_X_probe)
-      cue.data.condition = "BX"
-      probe.data.condition = "BX"
-      break;
-    case "AY":
-      cue = jQuery.extend(true, {}, practice_A_cue)
-      probe = jQuery.extend(true, {}, practice_other_probe)
-      cue.data.condition = "AY"
-      probe.data.condition = "AY"
-      break;
-    case "BY":
-      cue = jQuery.extend(true, {}, practice_other_cue)
-      probe = jQuery.extend(true, {}, practice_other_probe)
-      cue.data.condition = "BY"
-      probe.data.condition = "BY"
-      break;
-  }
-  ax_cpt_rdoc_experiment.push(cue)
-  ax_cpt_rdoc_experiment.push(probe)
-  ax_cpt_rdoc_experiment.push(wait_block_practice)
-}
+  ax_cpt_rdoc_experiment.push(instruction_node);
 
-ax_cpt_rdoc_experiment.push(start_test_block)
-ax_cpt_rdoc_experiment.push(attention_node)
-
-// add test
-for (b = 0; b < blocks.length; b++) {
-  var block = blocks[b]
-  for (i = 0; i < block.length; i++) {
-    switch (block[i]) {
+  // practice
+  for (i = 0; i < practice_block_list.length; i++) {
+    switch (practice_block_list[i]) {
       case "AX":
-        cue = jQuery.extend(true, {}, A_cue)
-        probe = jQuery.extend(true, {}, X_probe)
+        cue = jQuery.extend(true, {}, practice_A_cue)
+        probe = jQuery.extend(true, {}, practice_X_probe)
         cue.data.condition = "AX"
         probe.data.condition = "AX"
         break;
       case "BX":
-        cue = jQuery.extend(true, {}, other_cue)
-        probe = jQuery.extend(true, {}, X_probe)
+        cue = jQuery.extend(true, {}, practice_other_cue)
+        probe = jQuery.extend(true, {}, practice_X_probe)
         cue.data.condition = "BX"
         probe.data.condition = "BX"
         break;
       case "AY":
-        cue = jQuery.extend(true, {}, A_cue)
-        probe = jQuery.extend(true, {}, other_probe)
+        cue = jQuery.extend(true, {}, practice_A_cue)
+        probe = jQuery.extend(true, {}, practice_other_probe)
         cue.data.condition = "AY"
         probe.data.condition = "AY"
         break;
       case "BY":
-        cue = jQuery.extend(true, {}, other_cue)
-        probe = jQuery.extend(true, {}, other_probe)
+        cue = jQuery.extend(true, {}, practice_other_cue)
+        probe = jQuery.extend(true, {}, practice_other_probe)
         cue.data.condition = "BY"
         probe.data.condition = "BY"
-        break;
+        break;  
     }
     ax_cpt_rdoc_experiment.push(cue)
     ax_cpt_rdoc_experiment.push(probe)
-    ax_cpt_rdoc_experiment.push(wait_block)
+    ax_cpt_rdoc_experiment.push(wait_block_practice)
   }
-  ax_cpt_rdoc_experiment.push(attention_node)
-  ax_cpt_rdoc_experiment.push(rest_block)
-}
-ax_cpt_rdoc_experiment.push(post_task_block)
-ax_cpt_rdoc_experiment.push(end_block)
+
+  ax_cpt_rdoc_experiment.push(start_test_block)
+  // ax_cpt_rdoc_experiment.push(attention_node)
+
+  // test
+  for (b = 0; b < blocks.length; b++) {
+    var block = blocks[b]
+    for (i = 0; i < block.length; i++) {
+      switch (block[i]) {
+        case "AX":
+          cue = jQuery.extend(true, {}, A_cue)
+          probe = jQuery.extend(true, {}, X_probe)
+          cue.data.condition = "AX"
+          probe.data.condition = "AX"
+          break;
+        case "BX":
+          cue = jQuery.extend(true, {}, other_cue)
+          probe = jQuery.extend(true, {}, X_probe)
+          cue.data.condition = "BX"
+          probe.data.condition = "BX"
+          break;
+        case "AY":
+          cue = jQuery.extend(true, {}, A_cue)
+          probe = jQuery.extend(true, {}, other_probe)
+          cue.data.condition = "AY"
+          probe.data.condition = "AY"
+          break;
+        case "BY":
+          cue = jQuery.extend(true, {}, other_cue)
+          probe = jQuery.extend(true, {}, other_probe)
+          cue.data.condition = "BY"
+          probe.data.condition = "BY"
+          break;
+      }
+      ax_cpt_rdoc_experiment.push(cue)
+      ax_cpt_rdoc_experiment.push(probe)
+      ax_cpt_rdoc_experiment.push(wait_block)
+    }
+    // ax_cpt_rdoc_experiment.push(attention_node) // for now
+    ax_cpt_rdoc_experiment.push(rest_block)
+  }
+  ax_cpt_rdoc_experiment.push(post_task_block)
+  ax_cpt_rdoc_experiment.push(end_block)
+};

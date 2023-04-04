@@ -2,19 +2,14 @@
 /*       Define Helper Functions        */
 /* ************************************ */
 
-function getDisplayElement() {
-    $('<div class = display_stage_background></div>').appendTo('body')
-    return $('<div class = display_stage></div>').appendTo('body')
-}
-
 function addID() {
-  jsPsych.data.addDataToLastTrial({exp_id: 'n_back_rdoc'})
+	jsPsych.data.get().addToLast({exp_id: 'n_back_rdoc'})
 }
 
 function evalAttentionChecks() {
 	var check_percent = 1
 	if (run_attention_checks) {
-		var attention_check_trials = jsPsych.data.getTrialsOfType('attention-check-rdoc')
+		var attention_check_trials = jsPsych.data.get().filter({trial_id: 'attention_check'}).trials
 		var checks_passed = 0
 		for (var i = 0; i < attention_check_trials.length; i++) {
 			if (attention_check_trials[i].correct === true) {
@@ -23,45 +18,43 @@ function evalAttentionChecks() {
 		}
 		check_percent = checks_passed / attention_check_trials.length
 	}
+	jsPsych.data.get().addToLast({"att_check_percent": check_percent})
 	return check_percent
 }
 
 function assessPerformance() {
-	var experiment_data = jsPsych.data.getTrialsOfType('poldrack-single-stim')
+	var experiment_data = jsPsych.data.get().filter({trial_id: 'test_trial'}).trials 
 	var missed_count = 0
 	var trial_count = 0
 	var rt_array = []
 	var rt = 0
 	var correct = 0
 	
-		//record choices participants made
+	//record choices participants made
 	var choice_counts = {}
-	choice_counts[-1] = 0
+	choice_counts[null] = 0
 	choice_counts[possible_responses[0][1]] = 0
 	choice_counts[possible_responses[1][1]] = 0
 	for (var k = 0; k < possible_responses.length; k++) {
 		choice_counts[possible_responses[k][1]] = 0
 	}
 	for (var i = 0; i < experiment_data.length; i++) {
-		if (experiment_data[i].trial_id == 'test_trial'){
-			trial_count += 1
-			rt = experiment_data[i].rt
-			key = experiment_data[i].key_press
-			choice_counts[key] += 1
-			if (rt == -1) {
-				missed_count += 1
-			} else {
-				rt_array.push(rt)
-			}
-			
-			if (key == experiment_data[i].correct_response){
-				correct += 1
-			}
+		trial_count += 1
+		rt = experiment_data[i].rt
+		key = experiment_data[i].response
+		choice_counts[key] += 1
+		if (rt == null) {
+			missed_count += 1
+		} else {
+			rt_array.push(rt)
+		}
+		if (key == experiment_data[i].correct_response){
+			correct += 1
 		}
 	}
 
 	//calculate average rt
-	var avg_rt = -1
+	var avg_rt = null
 	if (rt_array.length !== 0) {
 		avg_rt = math.median(rt_array)
 	} 
@@ -75,13 +68,12 @@ function assessPerformance() {
 	var missed_percent = missed_count/trial_count
 	var accuracy = correct / trial_count
 	credit_var = (missed_percent < 0.25 && avg_rt > 200 && responses_ok && accuracy > 0.60)
-	jsPsych.data.addDataToLastTrial({final_credit_var: credit_var,
+	jsPsych.data.get().addToLast({final_credit_var: credit_var,
 									 final_missed_percent: missed_percent,
 									 final_avg_rt: avg_rt,
 									 final_responses_ok: responses_ok,
 									 final_accuracy: accuracy})
 }
-
 
 var getResponse = function() {
 	return correct_response
@@ -92,17 +84,14 @@ var getInstructFeedback = function() {
 		'</p></div>'
 }
 
-
 var getFeedback = function() {
-	return '<div class = bigbox><div class = picture_box><p class = block-text><font color="white">' + feedback_text + '</font></p></div></div>'
+	return '<div class = bigbox><div class = picture_box><p class = block-text>' + feedback_text + '</font></p></div></div>' //<font color="white">
 }
-
 
 var randomDraw = function(lst) {
 	var index = Math.floor(Math.random() * (lst.length))
 	return lst[index]
 };
-
 
 var createTrialTypes = function(numTrialsPerBlock, delay){
 	first_stims = []
@@ -121,7 +110,6 @@ var createTrialTypes = function(numTrialsPerBlock, delay){
 			probe = randomDraw('bBdDgGtTvV'.split("").filter(function(y) {return $.inArray(y, [first_stims[i - delay].probe.toLowerCase(), first_stims[i - delay].probe.toUpperCase()]) == -1}))
 			correct_response = possible_responses[1][1]
 		}
-		
 		
 		first_stim = {
 			n_back_condition: n_back_condition,
@@ -198,7 +186,6 @@ var getStim = function(){
 	} else if (probe == probe.toLowerCase()) {
 	 letter_case = 'lowercase'
 	}
-	
 	return task_boards[0]+ preFileType  + letter_case + '_' + probe.toUpperCase() + fileTypePNG + task_boards[1]	
 }
 
@@ -207,38 +194,30 @@ var getResponse =  function(){
 }
 
 var appendData = function(){
-	curr_trial = jsPsych.progress().current_trial_global
-	trial_id = jsPsych.data.getDataByTrialIndex(curr_trial).trial_id
-	current_trial+=1
-	
-	
-	if (trial_id == 'practice_trial'){
+	var curr_trial = jsPsych.data.get().last().trials[0]
+
+	if (curr_trial.trial_id == 'practice_trial'){
 		current_block = practiceCount
-	} else if (trial_id == 'test_trial'){
+	} else if (curr_trial.trial_id == 'test_trial'){
 		current_block = testCount
 	}
-		
-	jsPsych.data.addDataToLastTrial({
+
+	var correct_trial = 0
+	if (curr_trial.response == correct_response){
+		correct_trial = 1
+	}
+
+	jsPsych.data.get().addToLast({
 		n_back_condition: n_back_condition,
 		probe: probe,
 		correct_response: correct_response,
 		delay: delay,
 		current_trial: current_trial,
 		current_block: current_block,
-		letter_case: letter_case
+		letter_case: letter_case,
+		correct_trial: correct_trial
 	})
-		
-	if (jsPsych.data.getDataByTrialIndex(curr_trial).key_press == correct_response){
-		jsPsych.data.addDataToLastTrial({
-			correct_trial: 1,
-		})
-	
-	} else if (jsPsych.data.getDataByTrialIndex(curr_trial).key_press != correct_response){
-		jsPsych.data.addDataToLastTrial({
-			correct_trial: 0,
-		})
-	
-	}			
+	current_trial+=1	
 }
 
 /* ************************************ */
@@ -259,9 +238,7 @@ var practice_thresh = 3 // 3 blocks of 15 trials
 
 var accuracy_thresh = 0.75
 var rt_thresh = 1000
-var missed_thresh = 0.10
-
-var delays = jsPsych.randomization.repeat([1, 2, 3], numTestBlocks / 3)
+var missed_response_thresh = 0.10
 
 var delay = 1
 
@@ -269,12 +246,9 @@ var pathSource = "/static/experiments/n_back_rdoc/images/"
 var fileTypePNG = ".png'></img>"
 var preFileType = "<img class = center src='/static/experiments/n_back_rdoc/images/"
 
+var possible_responses = [['index finger', ',', 'comma key (,)'],['middle finger', '.', 'period key (.)']]
 
-var n_back_conditions = jsPsych.randomization.repeat(['mismatch','mismatch','match','mismatch','mismatch'],1)
-var possible_responses = [['index finger', 188, 'comma key (,)'],['middle finger', 190, 'period key (.)']]
-
-var letters = 'bBdDgGtTvV'.split("")
-							 
+var letters = 'bBdDgGtTvV'.split("") 
 
 var prompt_text_list = '<ul style="text-align:left;">'+
 						'<li>Match the current letter to the letter that appeared some number of trials ago</li>' +
@@ -288,12 +262,12 @@ var prompt_text = '<div class = prompt_box>'+
 					  '<p class = center-block-text style = "font-size:16px; line-height:80%%;">If they mismatch, press your '+possible_responses[1][0]+'</p>' +
 				  '</div>'
 
-var speed_reminder = '<p class = block-text>Try to respond as quickly as possible without sacrificing accuracy.</p>'
+var speed_reminder = '<p class = block-text>Try to respond as quickly and accurately as possible.</p>'
 
 var current_trial = 0
 var current_block = 0
 
-//PRE LOAD IMAGES HERE
+//IMAGES TO PRELOAD
 var pathSource = "/static/experiments/n_back_rdoc/images/"
 var lettersPreload = ['B','D','G','T','V']
 var casePreload = ['lowercase','uppercase']
@@ -304,46 +278,44 @@ for(i = 0; i < lettersPreload.length; i++){
 		images.push(pathSource + casePreload[x] + '_' + lettersPreload[i] + '.png')
 	}
 }
+// preload them later when we have access to jsPsych variable
 
-jsPsych.pluginAPI.preloadImages(images);
 /* ************************************ */
 /*          Define Game Boards          */
 /* ************************************ */
 
 var task_boards = ['<div class = bigbox><div class = centerbox><div class = gng_number><div class = cue-text>','</div></div></div></div>']		
 
-var stims = createTrialTypes(practice_len, delay)
-
 /* ************************************ */
 /*        Set up jsPsych blocks         */
 /* ************************************ */
 // Set up attention check node
-var attention_check_block = {
-	type: 'attention-check-rdoc',
-	data: {
-		trial_id: "attention_check"
-	},
-	timing_response: 180000,
-	response_ends_trial: true,
-	timing_post_trial: 200
-}
+// var attention_check_block = {
+// 	type: 'attention-check-rdoc',
+// 	data: {
+// 		trial_id: "attention_check"
+// 	},
+// 	timing_response: 180000,
+// 	response_ends_trial: true,
+// 	timing_post_trial: 200
+// }
 
-var attention_node = {
-	timeline: [attention_check_block],
-	conditional_function: function() {
-		return run_attention_checks
-	}
-}
+// var attention_node = {
+// 	timeline: [attention_check_block],
+// 	conditional_function: function() {
+// 		return run_attention_checks
+// 	}
+// }
 
 var end_block = {
-	type: 'poldrack-text',
+	type: jsPsychHtmlKeyboardResponse,
 	data: {
 		trial_id: "end"
 	},
-	timing_response: 180000,
-	text: '<div class = centerbox><p class = center-block-text>Thanks for completing this task!</p><p class = center-block-text>Press <i>enter</i> to continue.</p></div>',
-	cont_key: [13],
-	timing_post_trial: 0,
+	trial_duration: 180000,
+	stimulus: '<div class = centerbox><p class = center-block-text>Thanks for completing this task!</p><p class = center-block-text>Press <i>enter</i> to continue.</p></div>',
+	choices: ['Enter'],
+	post_trial_gap: 0,
 	on_finish: function(){
 		assessPerformance()
 		evalAttentionChecks()
@@ -352,41 +324,50 @@ var end_block = {
 
 //Set up post task questionnaire
 var post_task_block = {
-   type: 'survey-text',
-   data: {
-       exp_id: "n_back_rdoc",
-       trial_id: "post task questions"
-   },
-   questions: ['<p class = center-block-text style = "font-size: 20px">Please summarize what you were asked to do in this task.</p>',
-              '<p class = center-block-text style = "font-size: 20px">Do you have any comments about this task?</p>'],
-   rows: [15, 15],
-   timing_response: 360000,
-   columns: [60,60]
-};
+	type: jsPsychSurveyText,
+	data: {
+		exp_id: "n_back_rdoc",
+		trial_id: "post task questions"
+	},
+	questions: [
+	 {
+	   prompt: '<p class = center-block-text style = "font-size: 20px">Please summarize what you were asked to do in this task.</p>',
+	   rows: 15,
+	   columns: 60,
+	 },
+	 {
+	   prompt: '<p class = center-block-text style = "font-size: 20px">Do you have any comments about this task?</p>',
+	   rows: 15,
+	   columns: 60,
+	}
+   ]
+ };
 
+ // this also functions as the welcome screen!
 var feedback_instruct_text ='<p class=center-block-text>Welcome! This experiment will take around 5 minutes.</p>' +
   '<p class=center-block-text>To avoid technical issues, please keep the experiment tab (on Chrome or Firefox) active and in full-screen mode for the whole duration of each task.</p>' +
   '<p class=center-block-text> Press <i>enter</i> to begin.</p>'
+
 var feedback_instruct_block = {
-	type: 'poldrack-text',
+	type: jsPsychHtmlKeyboardResponse,
 	data: {
-		trial_id: "instruction"
+		trial_id: "instruction_feedback"
 	},
-	cont_key: [13],
-	text: getInstructFeedback,
-	timing_post_trial: 0,
-	timing_response: 180000
+	choices: ['Enter'],
+	stimulus: getInstructFeedback,
+	post_trial_gap: 0,
+	trial_duration: 180000
 };
 
 /// This ensures that the subject does not read through the instructions too quickly.  If they do it too quickly, then we will go over the loop again.
 var instructions_block = {
-	type: 'poldrack-instructions',
+	type: jsPsychInstructions,
 	data: {
 		trial_id: "instruction"
 	},
 	pages: [
 		'<div class = centerbox>'+
-			'<p class=block-text>Place your <b>index finger</b> on the <b>' + possible_responses[0][2] + '</b> and your <b>middle finger</b> on the <b>' + possible_responses[1][2] + '</b> </p>' + 
+			'<p class=block-text>Place your <b>' + possible_responses[0][0] + '</b> on the <b>' + possible_responses[0][2] + '</b> and your <b>' + possible_responses[1][0] + '</b> on the <b>' + possible_responses[1][2] + '</b> </p>' + 
 			'<p class = block-text>In this task, you will see a letter on each trial.</p>'+
 			'<p class = block-text>Your task is to match the current letter to the letter that appeared either 1, 2, or 3 trials ago, depending on the delay given to you for that block.</p>'+
 			'<p class = block-text>Press your <b>'+possible_responses[0][0]+'</b> if the letters match, and your <b>'+possible_responses[1][0]+'</b> if they mismatch.</p>'+
@@ -404,27 +385,24 @@ var instructions_block = {
 		*/
 		'<div class = centerbox>' + 
 			speed_reminder +
-			'<p class = block-text>A practice round will start when you press "end instructions". During practice, you will receive feedback and a reminder of the rules. These will be taken out for the test, so make sure you understand the instructions before moving on.</p>'+
+			'<p class = block-text>You\'ll start with a practice round. During practice, you will receive feedback and a reminder of the rules. These will be taken out for the test, so make sure you understand the instructions before moving on.</p>'+
 			'<p class = block-text><b>Your delay for this practice round is 1</b>.</p>' + 
 		'</div>'
 	],
 	allow_keys: false,
 	show_clickable_nav: true,
-	timing_post_trial: 1000
+	post_trial_gap: 0
 };
 
 
 
 /* This function defines stopping criteria */
-
 var instruction_node = {
 	timeline: [feedback_instruct_block, instructions_block],
-	
 	loop_function: function(data) {
-		for (i = 0; i < data.length; i++) {
-			if ((data[i].trial_type == 'poldrack-instructions') && (data[i].rt != -1)) {
-				rt = data[i].rt
-				sumInstructTime = sumInstructTime + rt
+		for (i = 0; i < data.trials.length; i++) {
+			if ((data.trials[i].trial_id == 'instruction') && (data.trials[i].rt != null)) {
+				sumInstructTime += data.trials[i].rt
 			}
 		}
 		if (sumInstructTime <= instructTimeThresh * 1000) {
@@ -439,284 +417,267 @@ var instruction_node = {
 }
 
 var start_test_block = {
-	type: 'poldrack-text',
+	type: jsPsychHtmlKeyboardResponse,
 	data: {
 		trial_id: "instruction"
 	},
-	timing_response: 180000,
-	text: '<div class = centerbox>'+
+	trial_duration: 180000,
+	stimulus: '<div class = centerbox>'+
 			'<p class = block-text>We will now begin the test portion.</p>'+
-			'<p class = block-text>Keep your index finger on the ' + possible_responses[0][2] + ' and your middle finger on the ' + possible_responses[1][2] + ' key.</p>' + 
+			'<p class = block-text>Keep your ' + possible_responses[0][0] + ' on the ' + possible_responses[0][2] + ' and your ' + possible_responses[1][0] + ' on the ' + possible_responses[1][2] + '</p>' + 
 			'<p class = block-text>Once again, match the current letter to the letter that appeared either 1, 2, or 3 trials ago depending on the delay given to you for each block.'+
 			'Press your '+possible_responses[0][0]+' if they match, and your '+possible_responses[1][0]+' if they mismatch.</p>'+
 			'<p class = block-text>Your delay (the number of trials ago to which you compare the current letter) will change from block to block.</p>'+
 			'<p class = block-text>Capitalization does not matter, so "T" matches with "t". The first trial(s) will not match, because there was nothing before them.</p> '+	
 			'<p class = block-text>You will no longer see the rules, so memorize the instructions before you continue. Press <i>enter</i> to begin.</p>'+
 		 '</div>',
-	cont_key: [13],
-	timing_post_trial: 1000,
+	choices: ['Enter'],
+	post_trial_gap: 1000,
 	on_finish: function(){
-		feedback_text = "<p>Your delay for this block is "+delay+". </p><p>Please match the current letter to the letter that appeared "+delay+" trial(s) ago. </p><p>Press <i>enter</i> to begin.</p>"
+		feedback_text = "<p class = center-block-text>Your delay for this block is "+delay+". <br>Please match the current letter to the letter that appeared "+delay+" trial(s) ago. <br>Press <i>enter</i> to begin.</p>"
 	}
 };
 
 var start_control_block = {
-	type: 'poldrack-text',
+	type: jsPsychHtmlKeyboardResponse,
 	data: {
 		trial_id: "instruction"
 	},
-	timing_response: 180000,
-	text: '<div class = centerbox>'+
+	trial_duration: 180000,
+	stimulus: '<div class = centerbox>'+
 			'<p class = block-text>For this block of trials, you do not have to match letters.  Instead, indicate whether the current letter is a T (or t).</p>'+
-			'<p class = block-text>Press the '+possible_responses[0][0]+' if the current letter was a T (or t) and the '+possible_responses[1][0]+' if not.</p> '+
+			'<p class = block-text>Press your '+possible_responses[0][0]+' if the current letter was a T (or t) and your '+possible_responses[1][0]+' if not.</p> '+
 			'<p class = block-text>You will no longer receive the rule prompt, so remember the instructions before you continue. Press <i>enter</i> to begin.</p>'+
 		 '</div>',
-	cont_key: [13],
-	timing_post_trial: 1000,
+	choices: ['Enter'],
+	post_trial_gap: 1000,
 	on_finish: function(){
 		feedback_text = "We will now start this block. Press <i>enter</i> to begin."
 	}
 };
 
-
 var fixation_block = {
-	type: 'poldrack-single-stim',
+	type: jsPsychHtmlKeyboardResponse,
 	stimulus: '<div class = centerbox><div class = fixation>+</div></div>',
 	is_html: true,
-	choices: 'none',
+	choices: ['NO_KEYS'],
 	data: {
 		trial_id: "practice_fixation"
 	},
-	timing_response: 500, //500
-	timing_post_trial: 0,
+	trial_duration: 500, //500
+	post_trial_gap: 0,
 }
 
-
-
-var feedback_text = '<p class=center-block-text>Welcome! This experiment will take around 5 minutes.</p>' +
-  '<p class=center-block-text>To avoid technical issues, please keep the experiment tab (on Chrome or Firefox) active and in full-screen mode for the whole duration of each task.</p>' +
-  '<p class=center-block-text> Press <i>enter</i> to begin.</p>'
+var feedback_text = '<p class = center-block-text>Press <i>enter</i> to begin practice.<br><b>Your delay for this practice round is 1</b>.</p>'
 var feedback_block = {
-	type: 'poldrack-single-stim',
+	type: jsPsychHtmlKeyboardResponse,
 	data: {
-		trial_id: "practice-no-stop-feedback"
+		trial_id: "feedback"
 	},
-	choices: [13],
+	choices: ['Enter'],
 	stimulus: getFeedback,
-	timing_post_trial: 0,
+	post_trial_gap: 0,
 	is_html: true,
-	timing_response: 180000,
+	trial_duration: 180000,
 	response_ends_trial: true, 
-
 };
-
 
 /* ************************************ */
 /*        Set up timeline blocks        */
 /* ************************************ */
 
-var practiceTrials = []
-practiceTrials.push(feedback_block)
-practiceTrials.push(instructions_block)
-for (i = 0; i < practice_len + 3; i++) {	
-	var practice_block = {
-		type: 'poldrack-categorize',
-		stimulus: getStim,
-		is_html: true,
-		choices: [possible_responses[0][1],possible_responses[1][1]],
-		key_answer: getResponse,
-		data: {
-			trial_id: "practice_trial"
-			},
-		correct_text: '<div class = fb_box><div class = center-text><font size = 20>Correct!</font></div></div>' + prompt_text,
-		incorrect_text: '<div class = fb_box><div class = center-text><font size = 20>Incorrect</font></div></div>' + prompt_text,
-		timeout_message: '<div class = fb_box><div class = center-text><font size = 20>Respond Faster!</font></div></div>' + prompt_text,
-		timing_stim: 1000, //1000
-		timing_response: 2000, //2000
-		timing_feedback_duration: 500,
-		show_stim_with_feedback: false,
-		timing_post_trial: 0,
-		on_finish: appendData,
-		prompt: prompt_text
-	}
-	practiceTrials.push(practice_block)
-}
+var get_practiceNode = function() {
 
-var practiceCount = 0
-var practiceNode = {
-	timeline: practiceTrials,
-	loop_function: function(data) {
-		practiceCount += 1
-		stims = createTrialTypes(practice_len, delay)
-		current_trial = 0
-	
-		var sum_rt = 0
-		var sum_responses = 0
-		var correct = 0
-		var total_trials = 0
-		var mismatch_press = 0
-	
-		for (var i = 0; i < data.length; i++){
-			if (data[i].trial_id == "practice_trial"){
-				total_trials+=1
-				if (data[i].rt != -1){
-					sum_rt += data[i].rt
-					sum_responses += 1
-					if (data[i].key_press == data[i].correct_response){
-						correct += 1
+	var practiceTrials = []
+	for (i = 0; i < practice_len + 3; i++) {	
+		var practice_post_trial_gap = { // adding this and shortening actual trial to 1000ms
+			type: jsPsychHtmlKeyboardResponse,
+			stimulus: '',
+			data: {trial_id: 'practice_post_trial_gap'},
+			choices: ["NO_KEYS"],
+			prompt: prompt_text,
+			trial_duration: 1000
+		}
+		var practice_block = {
+			type: jsPsychCategorizeHtml,
+			stimulus: getStim,
+			is_html: true,
+			choices: [possible_responses[0][1],possible_responses[1][1]],
+			key_answer: getResponse,
+			data: {
+				trial_id: "practice_trial"
+				},
+			correct_text: '<div class = fb_box><div class = center-text><font size = 20>Correct!</font></div></div>' + prompt_text,
+			incorrect_text: '<div class = fb_box><div class = center-text><font size = 20>Incorrect</font></div></div>' + prompt_text,
+			timeout_message: '<div class = fb_box><div class = center-text><font size = 20>Respond Faster!</font></div></div>' + prompt_text,
+			stimulus_duration: 1000, //1000
+			trial_duration: 1000, //2000
+			feedback_duration: 1000,
+			show_stim_with_feedback: true,
+			post_trial_gap: 0,
+			on_finish: appendData,
+			prompt: prompt_text
+		}
+		practiceTrials.push(practice_block, practice_post_trial_gap)
+	}
+
+	practiceCount = 0 //global 
+	var practiceNode = {
+		timeline: [feedback_block].concat(practiceTrials),
+		loop_function: function(data) {
+			practiceCount += 1
+			stims = createTrialTypes(practice_len, delay)
+			current_trial = 0
 		
+			var sum_rt = 0
+			var sum_responses = 0
+			var correct = 0
+			var total_trials = 0
+			var mismatch_press = 0
+		
+			for (var i = 0; i < data.trials.length; i++){
+				if (data.trials[i].trial_id == "practice_trial"){
+					total_trials+=1
+					if (data.trials[i].rt != null){
+						sum_rt += data.trials[i].rt
+						sum_responses += 1
+						if (data.trials[i].response == data.trials[i].correct_response){
+							correct += 1
+			
+						}
+					}
+					if (data.trials[i].response == possible_responses[1][1]){
+						mismatch_press += 1
 					}
 				}
-				
-				if (data[i].key_press == possible_responses[1][1]){
-					mismatch_press += 1
+			}
+		
+			var accuracy = correct / total_trials
+			var missed_responses = (total_trials - sum_responses) / total_trials
+			var ave_rt = sum_rt / sum_responses
+			var mismatch_press_percentage = mismatch_press / total_trials
+	
+			feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!</p>"
+
+			if (accuracy > accuracy_thresh){
+				feedback_text += '<p class = block-text>Done with this practice. Press <i>enter</i> to continue.</p>' 
+				delay = delays.pop()
+				stims = createTrialTypes(numTrialsPerBlock, delay)
+				return false
+		  
+			} else { // accuracy < accuracy_thresh
+				feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + prompt_text_list 
+				if (ave_rt > rt_thresh){
+					feedback_text += '<p class = block-text>You have been responding too slowly.' + speed_reminder + '</p>'
+				}
+				if (missed_responses > missed_response_thresh){
+					feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
+				}
+				if (mismatch_press_percentage >= 0.90){
+					feedback_text += '</p><p class = block-text>Please do not simply press your '+possible_responses[1][0]+' to every stimulus. Please try to identify the matches and press your '+possible_responses[0][0]+' when they occur.'
 				}
 		
-			}
-	
-		}
-	
-		var accuracy = correct / total_trials
-		var missed_responses = (total_trials - sum_responses) / total_trials
-		var ave_rt = sum_rt / sum_responses
-		var mismatch_press_percentage = mismatch_press / total_trials
-	
-		feedback_text = "<br>Please take this time to read your feedback and to take a short break! Press <i>enter</i> to continue."
-
-		if (accuracy > accuracy_thresh){
-			feedback_text +=
-					'</p><p class = block-text>Done with this practice. Press <i>enter</i> to continue.' 
-			delay = delays.pop()
-			stims = createTrialTypes(numTrialsPerBlock, delay)
-			return false
-	
-		} else if (accuracy < accuracy_thresh){
-			if (missed_responses > missed_thresh){
-				feedback_text +=
-						'</p><p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.'
-			}
-
-	      	if (ave_rt > rt_thresh){
-	        	feedback_text += 
-	            	'</p><p class = block-text>You have been responding too slowly.'
-	      	}
-			
-			if (mismatch_press_percentage >= 0.90){
-				feedback_text +=
-						'</p><p class = block-text>Please do not simply press the "'+possible_responses[1][0]+'" to every stimulus. Please try to identify the matches and press the "'+possible_responses[0][0]+'" when they occur.'
-			}
-		
-			if (practiceCount == practice_thresh){
-				feedback_text +=
-					'</p><p class = block-text>Done with this practice.' 
+				if (practiceCount == practice_thresh) {
+					feedback_text += '<p class = block-text>Done with this practice. Press <i>enter</i> to continue.</p>' 
 					delay = delays.pop()
 					stims = createTrialTypes(numTrialsPerBlock, delay)
 					return false
+				} else {
+					feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
+					return true
+				}
 			}
-			
-			feedback_text +=
-				'</p><p class = block-text>We are going to try practice again to see if you can achieve higher accuracy.  Remember: <br>' + prompt_text_list 
-			
-			feedback_text +=
-				'</p><p class = block-text>Press <i>enter</i> to continue.' 
-			
-			return true
-		
 		}
+	}
+	return practiceNode
+}
+
+var get_testNode = function() {
+	var testTrials = []
+	//testTrials.push(attention_node)
+	for (i = 0; i < numTrialsPerBlock + 3; i++) {
 		
+		var test_block = {
+			type: jsPsychHtmlKeyboardResponse,
+			stimulus: getStim,
+			is_html: true,
+			data: {
+				trial_id: "test_trial",
+			},
+			choices: [possible_responses[0][1],possible_responses[1][1]],
+			stimulus_duration: 1000, //1000
+			trial_duration: 2000, //2000
+			post_trial_gap: 0,
+			response_ends_trial: false,
+			on_finish: appendData
+		}
+		testTrials.push(test_block)
 	}
-}
 
-var testTrials = []
-testTrials.push(feedback_block)
-testTrials.push(attention_node)
-for (i = 0; i < numTrialsPerBlock + 3; i++) {
-	
-	var test_block = {
-		type: 'poldrack-single-stim',
-		stimulus: getStim,
-		is_html: true,
-		data: {
-			"trial_id": "test_trial",
-		},
-		choices: [possible_responses[0][1],possible_responses[1][1]],
-		timing_stim: 1000, //1000
-		timing_response: 2000, //2000
-		timing_post_trial: 0,
-		response_ends_trial: false,
-		on_finish: appendData
-	}
-	testTrials.push(test_block)
-}
+	testCount = 0 //global
+	var testNode = {
+		timeline: [feedback_block].concat(testTrials),
+		loop_function: function(data) {
+			testCount += 1
+			current_trial = 0
+			
+			var sum_rt = 0
+			var sum_responses = 0
+			var correct = 0
+			var total_trials = 0
+			var mismatch_press = 0
 
-var testCount = 0
-var testNode = {
-	timeline: testTrials,
-	loop_function: function(data) {
-	testCount += 1
-	current_trial = 0
-	
-	var sum_rt = 0
-		var sum_responses = 0
-		var correct = 0
-		var total_trials = 0
-		var mismatch_press = 0
-
-		for (var i = 0; i < data.length; i++){
-			if (data[i].trial_id == "test_trial"){
-				total_trials+=1
-				if (data[i].rt != -1){
-					sum_rt += data[i].rt
-					sum_responses += 1
-					if (data[i].key_press == data[i].correct_response){
-						correct += 1
+			for (var i = 0; i < data.trials.length; i++){
+				if (data.trials[i].trial_id == "test_trial"){
+					total_trials+=1
+					if (data.trials[i].rt != null){
+						sum_rt += data.trials[i].rt
+						sum_responses += 1
+						if (data.trials[i].response == data.trials[i].correct_response){
+							correct += 1
+						}
 					}
-				}
-				
-				if (data[i].key_press == possible_responses[1][1]){
-					mismatch_press += 1
-				}
-			} 
-		}
-	
-		var accuracy = correct / total_trials
-		var missed_responses = (total_trials - sum_responses) / total_trials
-		var ave_rt = sum_rt / sum_responses
-		var mismatch_press_percentage = mismatch_press / total_trials
-	
-		feedback_text = "<br>Please take this time to read your feedback and to take a short break! Press <i>enter</i> to continue."
-		feedback_text += "</p><p class = block-text>You have completed: "+testCount+" out of "+numTestBlocks+" blocks of trials."
-		
-		if (accuracy < accuracy_thresh){
-			feedback_text +=
-					'</p><p class = block-text>Your accuracy is too low.  Remember: <br>' + prompt_text_list 
-		}
-		if (missed_responses > missed_thresh){
-			feedback_text +=
-					'</p><p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.'
-		}
-
-      	if (ave_rt > rt_thresh){
-        	feedback_text += 
-            	'</p><p class = block-text>You have been responding too slowly.'
-      	}
-		
-		if (mismatch_press_percentage >= 0.90){
-				feedback_text +=
-						'</p><p class = block-text>Please do not simply press the "'+possible_responses[1][0]+'" to every stimulus. Please try to identify the matches and press the "'+possible_responses[0][0]+'" when they occur.'
+					if (data.trials[i].response == possible_responses[1][1]){
+						mismatch_press += 1
+					}
+				} 
 			}
-	
-		if (testCount == numTestBlocks){
-			feedback_text +=
-					'</p><p class = block-text>Done with this test. Press <i>enter</i> to continue.<br> If you have been completing tasks continuously for an hour or more, please take a 15-minute break before starting again.'
-			return false
-		} else {
-			delay = delays.pop()
-			stims = createTrialTypes(numTrialsPerBlock, delay)
-			feedback_text += "</p><p class = block-text><i>For the next round of trials, your delay is "+delay+"</i>.  Press <i>enter</i> to continue."
-			return true
+		
+			var accuracy = correct / total_trials
+			var missed_responses = (total_trials - sum_responses) / total_trials
+			var ave_rt = sum_rt / sum_responses
+			var mismatch_press_percentage = mismatch_press / total_trials
+		
+			feedback_text = "<p>Please take this time to read your feedback and to take a short break! Press <i>enter</i> to continue." +
+			"<br>You have completed " +testCount+ " out of " +numTestBlocks+ " blocks of trials.</p>"
+
+			if (accuracy < accuracy_thresh){
+				feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: </p>' + prompt_text_list 
+			}
+			if (missed_responses > missed_response_thresh){
+				feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
+			}
+
+			if (ave_rt > rt_thresh){
+				feedback_text += '<p class = block-text>You have been responding too slowly.</p>'
+			}
+			
+			if (mismatch_press_percentage >= 0.90){
+				feedback_text += '<p class = block-text>Please do not simply press your '+possible_responses[1][0]+' to every stimulus. Please try to identify the matches and press your '+possible_responses[0][0]+' when they occur.</p>'
+			}
+		
+			if (testCount == numTestBlocks){
+				feedback_text += '<p class = block-text>Done with this test. Press <i>enter</i> to continue.<br> If you have been completing tasks continuously for an hour or more, please take a 15-minute break before starting again.</p>'
+				return false
+			} else {
+				delay = delays.pop()
+				stims = createTrialTypes(numTrialsPerBlock, delay)
+				feedback_text += "<p class = block-text><i>For the next round of trials, your delay is "+delay+"</i>.  Press <i>enter</i> to continue.</p>"
+				return true
+			}
 		}
 	}
+	return testNode
 }
 
 
@@ -725,13 +686,23 @@ var testNode = {
 /* ************************************ */
 
 var n_back_rdoc_experiment = []
+var n_back_rdoc_init = () => {
 
-n_back_rdoc_experiment.push(practiceNode);
-n_back_rdoc_experiment.push(feedback_block);
+	document.body.style.background = 'gray' //// CHANGE THIS
 
-n_back_rdoc_experiment.push(start_test_block);
-n_back_rdoc_experiment.push(testNode);
-n_back_rdoc_experiment.push(feedback_block);
+	jsPsych.pluginAPI.preloadImages(images);
 
-n_back_rdoc_experiment.push(post_task_block);
-n_back_rdoc_experiment.push(end_block);
+	// globals
+	delays = jsPsych.randomization.repeat([1, 2, 3], numTestBlocks / 3)
+	n_back_conditions = jsPsych.randomization.repeat(['mismatch','mismatch','match','mismatch','mismatch'],1)
+	stims = createTrialTypes(practice_len, delay)
+
+	n_back_rdoc_experiment.push(instruction_node)
+	n_back_rdoc_experiment.push(get_practiceNode());
+
+	n_back_rdoc_experiment.push(start_test_block);
+	n_back_rdoc_experiment.push(get_testNode());
+
+	n_back_rdoc_experiment.push(post_task_block);
+	n_back_rdoc_experiment.push(end_block);
+}

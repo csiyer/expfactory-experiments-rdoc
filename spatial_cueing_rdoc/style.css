@@ -67,6 +67,7 @@
   left:50%;
   margin-right:-50%;
   transform: translate(-50%,-50%);
+  background-color: none;
 }
 
 .bigbox {
@@ -117,26 +118,55 @@ img.center {
   max-height: 65%;
 }
 
-/*******************************************************/
-/***************    AX-CPT CSS Styles    ***************/
-/*******************************************************/
 
-.AX_text {
-	text-align:center;
-  font-size: 60px;
-  position: relative;
-  top: 50%;
-  -ms-transform: translateY(-50%);
-  -webkit-transform: translateY(-50%);
-  transform: translateY(-50%);
+/*******************************************************/
+/************       Posner CSS Styles        ***********/
+/*******************************************************/
+/* copied from ANT */
+
+.ANT_up {
+  height: 7vw;
+  width: 25vw;
+  position:absolute;
+  top:50%;
+  left:50%;
+  margin-right:-50%;
+  transform: translate(-50%,-300%);
 }
 
-.AX_feedback {
-	text-align:center;
-  font-size: 24px;
+.ANT_down {
+  height: 7vw;
+  width: 25vw;
+  position:absolute;
+  top:50%;
+  left:50%;
+  margin-right:-50%;
+  transform: translate(-50%,200%);
+}
+
+.ANT_text {
+	text-align: center;
+	font-size: 60px;
   position: relative;
-  top: 50%;
-  -ms-transform: translateY(-50%);
-  -webkit-transform: translateY(-50%);
+  top: 50%; 
   transform: translateY(-50%);
+  -webkit-transform: translateY(-50%);
+}
+
+.ANT_centercue_text {
+	text-align: center;
+	font-size: 60px;
+	position: relative;
+  top: 50%; 
+  transform: translateY(-40%);
+  -webkit-transform: translateY(-40%);
+}
+
+.responded {
+  visibility: hidden;
+}
+
+.ANT_img {
+  max-width: 16%;
+  padding: 0px 4% 0px 0px;
 }
