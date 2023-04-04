@@ -363,7 +363,7 @@ var instructions_block = {
 			'<p class = block-text>Please <b>do not</b> slow down your responses in order to wait for the star.  It is equally important to respond quickly on trials without the star as it is to stop on trials with the star.</p>'+
 		'</div>',
 		'<div class = centerbox>' + speed_reminder + 
-			'<p class = block-text>You\'ll start with a practice round. During practice, you will receive feedback and a reminder of the rules. These will be taken out for the test, so make sure you understand the instructions before moving on.</p>' + 
+			'<p class = block-text>We\'ll start with a practice round. During practice, you will receive feedback and a reminder of the rules. These will be taken out for the test, so make sure you understand the instructions before moving on.</p>' + 
 		'</div>',
 	],
 	allow_keys: false,
@@ -393,7 +393,6 @@ var instruction_node = {
 var fixation_block = {
 	type: jsPsychHtmlKeyboardResponse,
 	stimulus: '<div class = centerbox><div class = fixation>+</div></div>',
-	is_html: true,
 	choices: ['NO_KEYS'],
 	data: {
 		trial_id: "fixation",
@@ -406,7 +405,6 @@ var fixation_block = {
 var prompt_fixation_block = {
 	type: jsPsychHtmlKeyboardResponse,
 	stimulus: '<div class = centerbox><div class = fixation>+</div></div>',
-	is_html: true,
 	choices: ['NO_KEYS'],
 	data: {
 		trial_id: "prompt_fixation",
@@ -427,7 +425,6 @@ var feedback_block = {
 	choices: ['Enter'],
 	stimulus: getFeedback,
 	post_trial_gap: 0,
-	is_html: true,
 	trial_duration: 180000,
 	response_ends_trial: true, 
 };
@@ -443,7 +440,6 @@ var start_test_block = {
 				'<p class = block-text>Do not respond if you see a star.</p>'+
 				'<p class = block-text>You will no longer receive the rule prompt, so remember the instructions before you continue. Press <i>enter</i> to begin.</p>'+
 			 '</div>',
-	is_html: true,
 	choices: ['Enter'],
 	data: {
 		trial_id: "start_test_block"
@@ -491,15 +487,15 @@ for (i = 0; i < practice_len; i++) {
 		SS_trial_type: getSSType,
 		data: {
 			trial_id: "practice_trial",
+			exp_stage: 'practice'
 		},
-		is_html: true,
 		choices: choices,
 		stimulus_duration: 1000, //1000
 		trial_duration: 2000, //2000
 		response_ends_trial: false,
 		SSD: getSSD,
 		timing_SS: 500, //500
-		post_trial_gap: 0,
+		timing_post_trial: 0,
 		on_finish: appendData,
 		prompt: prompt_text,
 		on_start: function(){
@@ -508,25 +504,21 @@ for (i = 0; i < practice_len; i++) {
 		}
 	}
 	
-	var categorize_block = {
-		type: 'poldrack-single-stim',
+	var practice_feedback_block = {
+		type: jsPsychHtmlKeyboardResposne,
 		data: {
-			trial_id: "practice-stop-feedback"
+			trial_id: "practice-stop-feedback",
+			exp_stage: 'practice'
 		},
-		choices: 'none',
+		choices: ['NO_KEYS'],
 		stimulus: getCategorizeFeedback,
-		timing_post_trial: 0,
-		is_html: true,
-		timing_stim: 500, //500
-		timing_response: 500, //500
+		post_trial_gap: 0,
+		stimulus_duration: 500, //500
+		trial_duration: 500, //500
 		response_ends_trial: false, 
-
 	};
 
-	practiceStopTrials.push(prompt_fixation_block)
-	practiceStopTrials.push(practice_block)
-	practiceStopTrials.push(categorize_block)
-
+	practiceStopTrials.push(prompt_fixation_block, practice_block, practice_feedback_block)
 }
 
 
@@ -617,9 +609,9 @@ for (i = 0; i < numTrialsPerBlock; i++) {
 		SS_stimulus: getStopStim,
 		SS_trial_type: getSSType,
 		data: {
-			trial_id: "test_trial"
+			trial_id: "test_trial",
+			exp_stage: 'test'
 		},
-		is_html: true,
 		choices: choices,
 		stimulus_duration: 1000, //1000
 		trial_duration: 2000, //2000
@@ -633,8 +625,7 @@ for (i = 0; i < numTrialsPerBlock; i++) {
 			stoppingTimeTracker = []
 		}
 	}
-	testTrials.push(fixation_block)
-	testTrials.push(test_block)
+	testTrials.push(fixation_block, test_block)
 }
 
 var testCount = 0
@@ -712,6 +703,14 @@ var testNode = {
 	}
 }
 
+var fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: true
+}
+var exit_fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: false
+}
 
 /* ************************************ */
 /*          Set up Experiment           */
@@ -727,6 +726,8 @@ var stop_signal_rdoc_init = () => {
 	// globals
 	stims = createTrialTypes(numTrialsPerBlock)
 
+	stop_signal_rdoc_experiment.push(fullscreen)
+
 	stop_signal_rdoc_experiment.push(instruction_node)
 	stop_signal_rdoc_experiment.push(practiceStopNode)
 	stop_signal_rdoc_experiment.push(feedback_block);
@@ -737,4 +738,6 @@ var stop_signal_rdoc_init = () => {
 
 	stop_signal_rdoc_experiment.push(post_task_block);
 	stop_signal_rdoc_experiment.push(end_block);
+
+	stop_signal_rdoc_experiment.push(exit_fullscreen)
 }

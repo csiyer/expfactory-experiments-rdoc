@@ -247,6 +247,7 @@ var fileTypePNG = ".png'></img>"
 var preFileType = "<img class = center src='/static/experiments/n_back_rdoc/images/"
 
 var possible_responses = [['index finger', ',', 'comma key (,)'],['middle finger', '.', 'period key (.)']]
+var choices = [possible_responses[0][1],possible_responses[1][1]]
 
 var letters = 'bBdDgGtTvV'.split("") 
 
@@ -363,7 +364,7 @@ var feedback_instruct_block = {
 var instructions_block = {
 	type: jsPsychInstructions,
 	data: {
-		trial_id: "instruction"
+		trial_id: "instructions"
 	},
 	pages: [
 		'<div class = centerbox>'+
@@ -385,7 +386,7 @@ var instructions_block = {
 		*/
 		'<div class = centerbox>' + 
 			speed_reminder +
-			'<p class = block-text>You\'ll start with a practice round. During practice, you will receive feedback and a reminder of the rules. These will be taken out for the test, so make sure you understand the instructions before moving on.</p>'+
+			'<p class = block-text>We\'ll start with a practice round. During practice, you will receive feedback and a reminder of the rules. These will be taken out for the test, so make sure you understand the instructions before moving on.</p>'+
 			'<p class = block-text><b>Your delay for this practice round is 1</b>.</p>' + 
 		'</div>'
 	],
@@ -401,7 +402,7 @@ var instruction_node = {
 	timeline: [feedback_instruct_block, instructions_block],
 	loop_function: function(data) {
 		for (i = 0; i < data.trials.length; i++) {
-			if ((data.trials[i].trial_id == 'instruction') && (data.trials[i].rt != null)) {
+			if ((data.trials[i].trial_id == 'instructions') && (data.trials[i].rt != null)) {
 				sumInstructTime += data.trials[i].rt
 			}
 		}
@@ -459,7 +460,6 @@ var start_control_block = {
 var fixation_block = {
 	type: jsPsychHtmlKeyboardResponse,
 	stimulus: '<div class = centerbox><div class = fixation>+</div></div>',
-	is_html: true,
 	choices: ['NO_KEYS'],
 	data: {
 		trial_id: "practice_fixation"
@@ -468,7 +468,7 @@ var fixation_block = {
 	post_trial_gap: 0,
 }
 
-var feedback_text = '<p class = center-block-text>Press <i>enter</i> to begin practice.<br><b>Your delay for this practice round is 1</b>.</p>'
+var feedback_text = '<p class = center-block-text><b>Your delay for this practice round is 1</b>.<br>Press <i>enter</i> to begin practice.</p>'
 var feedback_block = {
 	type: jsPsychHtmlKeyboardResponse,
 	data: {
@@ -477,7 +477,6 @@ var feedback_block = {
 	choices: ['Enter'],
 	stimulus: getFeedback,
 	post_trial_gap: 0,
-	is_html: true,
 	trial_duration: 180000,
 	response_ends_trial: true, 
 };
@@ -490,35 +489,46 @@ var get_practiceNode = function() {
 
 	var practiceTrials = []
 	for (i = 0; i < practice_len + 3; i++) {	
-		var practice_post_trial_gap = { // adding this and shortening actual trial to 1000ms
-			type: jsPsychHtmlKeyboardResponse,
-			stimulus: '',
-			data: {trial_id: 'practice_post_trial_gap'},
-			choices: ["NO_KEYS"],
-			prompt: prompt_text,
-			trial_duration: 1000
-		}
+
 		var practice_block = {
-			type: jsPsychCategorizeHtml,
+			type: jsPsychHtmlKeyboardResponse,
 			stimulus: getStim,
-			is_html: true,
-			choices: [possible_responses[0][1],possible_responses[1][1]],
-			key_answer: getResponse,
 			data: {
-				trial_id: "practice_trial"
-				},
-			correct_text: '<div class = fb_box><div class = center-text><font size = 20>Correct!</font></div></div>' + prompt_text,
-			incorrect_text: '<div class = fb_box><div class = center-text><font size = 20>Incorrect</font></div></div>' + prompt_text,
-			timeout_message: '<div class = fb_box><div class = center-text><font size = 20>Respond Faster!</font></div></div>' + prompt_text,
+				trial_id: "practice_trial",
+				exp_stage: "practice"
+			},
+			choices: choices,
 			stimulus_duration: 1000, //1000
-			trial_duration: 1000, //2000
-			feedback_duration: 1000,
-			show_stim_with_feedback: true,
+			trial_duration: 2000, //2000
 			post_trial_gap: 0,
-			on_finish: appendData,
+			response_ends_trial: false,
+			prompt: prompt_text,
+			on_finish: appendData
+		}
+
+		var practice_feedback_block = {
+			type: jsPsychHtmlKeyboardResponse,
+			stimulus: function() {
+				var last = jsPsych.data.get().last(1).values()[0]
+				if (last.response == null) {
+					return '<div class = fb_box><div class = center-text><font size =20>Respond Faster!</font></div></div>'
+				} else if (last.correct_trial == 1) {
+					return '<div class = fb_box><div class = center-text><font size =20>Correct!</font></div></div>'
+				} else {
+					return '<div class = fb_box><div class = center-text><font size =20>Incorrect</font></div></div>'
+				}
+			},
+			data: {
+				exp_stage: "practice",
+				trial_id: "practice_feedback"
+			},
+			choices: ['NO_KEYS'],
+			stimulus_duration: 500,
+			trial_duration: 500,
 			prompt: prompt_text
 		}
-		practiceTrials.push(practice_block, practice_post_trial_gap)
+
+		practiceTrials.push(practice_block, practice_feedback_block)
 	}
 
 	practiceCount = 0 //global 
@@ -600,11 +610,11 @@ var get_testNode = function() {
 		var test_block = {
 			type: jsPsychHtmlKeyboardResponse,
 			stimulus: getStim,
-			is_html: true,
 			data: {
 				trial_id: "test_trial",
+				exp_stage: 'test'
 			},
-			choices: [possible_responses[0][1],possible_responses[1][1]],
+			choices: choices,
 			stimulus_duration: 1000, //1000
 			trial_duration: 2000, //2000
 			post_trial_gap: 0,
@@ -680,6 +690,15 @@ var get_testNode = function() {
 	return testNode
 }
 
+var fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: true
+}
+var exit_fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: false
+}
+
 
 /* ************************************ */
 /*          Set up Experiment           */
@@ -697,6 +716,8 @@ var n_back_rdoc_init = () => {
 	n_back_conditions = jsPsych.randomization.repeat(['mismatch','mismatch','match','mismatch','mismatch'],1)
 	stims = createTrialTypes(practice_len, delay)
 
+	n_back_rdoc_experiment.push(fullscreen)
+
 	n_back_rdoc_experiment.push(instruction_node)
 	n_back_rdoc_experiment.push(get_practiceNode());
 
@@ -705,4 +726,6 @@ var n_back_rdoc_init = () => {
 
 	n_back_rdoc_experiment.push(post_task_block);
 	n_back_rdoc_experiment.push(end_block);
+
+	n_back_rdoc_experiment.push(exit_fullscreen)
 }

@@ -337,13 +337,13 @@ var prompt_text_list = '<ul style="text-align:left;">'+
 // 					  '<p class = center-block-text style = "font-size:16px;">'+predictable_dimensions_list[1].values[0]+': ' + possible_responses[0][0] +  ' | ' + predictable_dimensions_list[1].values[1]+': ' + possible_responses[1][0] + '</p>' +
 // 				  '</div>'
 
-var prompt_text = '<div class = fixation>'+
+var prompt_text = '<div class = centerbox><div class = fixation>'+
 					  '<p class = center-block-text style = "font-size:16px;">Top 2 quadrants: judge number on '+predictable_dimensions_list[0].dim+'</p>' +
 					  '<p class = center-block-text style = "font-size:16px;">'+predictable_dimensions_list[0].values[0]+': ' + possible_responses[0][0] +  ' | ' + predictable_dimensions_list[0].values[1]+': ' + possible_responses[1][0] + '</p>' +
 					  '<p>+</p>' +
 					  '<p class = center-block-text style = "font-size:16px;">Bottom 2 quadrants: judge number on '+predictable_dimensions_list[1].dim+'</p>' +
 					  '<p class = center-block-text style = "font-size:16px;">'+predictable_dimensions_list[1].values[0]+': ' + possible_responses[0][0] +  ' | ' + predictable_dimensions_list[1].values[1]+': ' + possible_responses[1][0] + '</p>' +
-				  '</div>'
+				  '</div></div>'
 					//   '<div class = centerbox><div class = fixation>+</div></div>'
 // var prompt_text = '<div class = prompt_box>'+
 // 					  '<p class = center-block-text style = "font-size:16px; line-height:80%;">Top 2 quadrants: Judge number on '+predictable_dimensions_list[0].dim+'</p>' +
@@ -416,7 +416,6 @@ var post_task_block = {
    },
    choices: ['Enter'],
    stimulus: getFeedback,
-   is_html: true,
    stimulus_duration: 180000,
    trial_duration: 180000,
    post_trial_gap: 0,
@@ -450,14 +449,14 @@ var instructions_block = {
 			'  Based upon which quadrant the number appears in, you will complete a different task.</p> '+
 
 			'<p class = block-text>In the top two quadrants, please judge the number based on <b>'+predictable_dimensions_list[0].dim+predictable_dimensions_list[0].exp+'</b>. Press your <b>'+possible_responses[0][0]+
-			'</b> if <b>'+predictable_dimensions_list[0].values[0]+'</b>, and your <b>'+possible_responses[1][0]+'</b> if <b>'+predictable_dimensions_list[0].values[1]+'</b>.</p>'+
+			' if '+predictable_dimensions_list[0].values[0]+'</b>, and your <b>'+possible_responses[1][0]+' if '+predictable_dimensions_list[0].values[1]+'</b>.</p>'+
 		
 			'<p class = block-text>In the bottom two quadrants, please judge the number based on <b>'+predictable_dimensions_list[1].dim+predictable_dimensions_list[1].exp+'.</b>'+
-			' Press your <b>'+possible_responses[0][0]+'</b> if <b>'+predictable_dimensions_list[1].values[0]+'</b>, and your <b>'+possible_responses[1][0]+
-			'</b> if <b>'+predictable_dimensions_list[1].values[1]+'</b>.</p>' + 
+			' Press your <b>'+possible_responses[0][0]+' if '+predictable_dimensions_list[1].values[0]+'</b>, and your <b>'+possible_responses[1][0]+
+			' if '+predictable_dimensions_list[1].values[1]+'</b>.</p>' + 
 		'</div>',
 		'<div class = centerbox>'+ speed_reminder+
-			'<p class = block-text>You\'ll start with a practice round. During practice, you will receive feedback and a reminder of the rules. These will be taken out for the test, so make sure you understand the instructions before moving on.</p>'+
+			'<p class = block-text>We\'ll start with a practice round. During practice, you will receive feedback and a reminder of the rules. These will be taken out for the test, so make sure you understand the instructions before moving on.</p>'+
 		'</div>'
 	],
 	allow_keys: false,
@@ -510,11 +509,11 @@ var start_test_block = {
 			'<p class = block-text>Keep your index finger on the ' + possible_responses[0][2] + ' and your middle finger on the ' + possible_responses[1][2] + ' key.</p>' + 
 			
 			'<p class = block-text>In the top two quadrants, please judge the number based on <b>'+predictable_dimensions_list[0].dim+predictable_dimensions_list[0].exp+'</b>. Press your <b>'+possible_responses[0][0]+
-			'</b> if <b>'+predictable_dimensions_list[0].values[0]+'</b>, and the <b>'+possible_responses[1][0]+'</b> if <b>'+predictable_dimensions_list[0].values[1]+'</b>.</p>'+
+			' if '+predictable_dimensions_list[0].values[0]+'</b>, and the <b>'+possible_responses[1][0]+' if '+predictable_dimensions_list[0].values[1]+'</b>.</p>'+
 		
 			'<p class = block-text>In the bottom two quadrants, please judge the number based on <b>'+predictable_dimensions_list[1].dim+predictable_dimensions_list[1].exp+'.</b>'+
-			' Press the <b>'+possible_responses[0][0]+'</b> if <b>'+predictable_dimensions_list[1].values[0]+'</b>, and the <b>'+possible_responses[1][0]+
-			'</b> if <b>'+predictable_dimensions_list[1].values[1]+'</b>.</p>' + 
+			' Press the <b>'+possible_responses[0][0]+' if '+predictable_dimensions_list[1].values[0]+'</b>, and the <b>'+possible_responses[1][0]+
+			' if '+predictable_dimensions_list[1].values[1]+'</b>.</p>' + 
 
 			speed_reminder +
 			'<p class = block-text>We will no longer display the rules, so memorize the instructions before you continue. Press <i>enter</i> to begin.</p>'+ 
@@ -532,8 +531,7 @@ var practiceTrials = []
 for (i = 0; i < practice_len + 1; i++) {
 	var fixation_block = {
 		type: jsPsychHtmlKeyboardResponse,
-		stimulus: '',
-		is_html: true,
+		stimulus: '', //fixation included in the prompt
 		choices: ["NO_KEYS"],
 		data: {
 			exp_stage: "practice",
@@ -547,7 +545,6 @@ for (i = 0; i < practice_len + 1; i++) {
 	var practice_cue_block = {
 		type: jsPsychHtmlKeyboardResponse,
 		stimulus: getCue,
-		is_html: true,
 		choices: ['NO_KEYS'],
 		data: {
 			exp_stage: "practice",
@@ -557,33 +554,46 @@ for (i = 0; i < practice_len + 1; i++) {
 		stimulus_duration: 150,  //getCTI
 		post_trial_gap: 0,
 		prompt: prompt_text
-	  };
+	};
 	
 	var practice_block = {
-		type: jsPsychCategorizeHtml,
+		type: jsPsychHtmlKeyboardResponse,
 		stimulus: getStim,
+		choices: choices,
 		data: {
 			exp_stage: "practice",
 			trial_id: "practice_trial"
 		},
-		key_answer: getResponse,
-		correct_text: '<div class = fb_box><div class = center-text><font size =20>Correct</font></div></div>' ,
-		incorrect_text: '<div class = fb_box><div class = center-text><font size =20>Incorrect</font></div></div>' ,
-		timeout_message: '<div class = fb_box><div class = center-text><font size =20>Respond Faster</font></div></div>',
-		show_stim_with_feedback: true,
-		is_html: true,
-		choices: choices,
 		stimulus_duration: 1000, //1000
 		trial_duration: 2000, //2000
-		feedback_duration: 1000, //500
-		response_ends_trial: false,
 		post_trial_gap: 0,
+		response_ends_trial: false,
 		on_finish: appendData,
+		prompt: prompt_text,
+	}
+
+	var practice_feedback_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: function() {
+			var last = jsPsych.data.get().last(1).values()[0]
+			if (last.response == null) {
+				return '<div class = fb_box><div class = center-text><font size =20>Respond Faster!</font></div></div>'
+			} else if (last.correct_trial == 1) {
+				return '<div class = fb_box><div class = center-text><font size =20>Correct!</font></div></div>'
+			} else {
+				return '<div class = fb_box><div class = center-text><font size =20>Incorrect</font></div></div>'
+			}
+		},
+		data: {
+			exp_stage: "practice",
+			trial_id: "practice_feedback"
+		},
+		choices: ['NO_KEYS'],
+		stimulus_duration: 500,
+		trial_duration: 500,
 		prompt: prompt_text
 	}
-	practiceTrials.push(fixation_block)
-	practiceTrials.push(practice_cue_block)
-	practiceTrials.push(practice_block)
+	practiceTrials.push(fixation_block, practice_cue_block, practice_block, practice_feedback_block)
 }
 
 var practiceCount = 0
@@ -591,8 +601,7 @@ var practiceNode = {
 	timeline: [feedback_block].concat(practiceTrials),
 	loop_function: function(data){
 		practiceCount += 1
-		task_switches = makeTaskSwitches(practice_len)
-		stims = createTrialTypes(task_switches)
+	
 		current_trial = 0
 	
 		var sum_rt = 0
@@ -641,6 +650,8 @@ var practiceNode = {
 				return false
 			} else {
 				feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
+				task_switches = makeTaskSwitches(practice_len)
+				stims = createTrialTypes(task_switches)
 				return true
 			}
 		} 
@@ -649,12 +660,11 @@ var practiceNode = {
 
 
 var testTrials = []
-// testTrials.push(attention_node)
+// testTrials.push(attention_©node)
 for (i = 0; i < numTrialsPerBlock + 1; i++) {
 	var fixation_block = {
 		type: jsPsychHtmlKeyboardResponse,
 		stimulus: getFixation,
-		is_html: true,
 		choices: ['NO_KEYS'],
 		data: {
 			exp_stage: "test",
@@ -667,7 +677,6 @@ for (i = 0; i < numTrialsPerBlock + 1; i++) {
 	var cue_block = {
 		type: jsPsychHtmlKeyboardResponse,
 		stimulus: getCue,
-		is_html: true,
 		choices: ['NO_KEYS'],
 		data: {
 			exp_stage: "test",
@@ -681,7 +690,6 @@ for (i = 0; i < numTrialsPerBlock + 1; i++) {
 	var test_block = {
 		type: jsPsychHtmlKeyboardResponse,
 		stimulus: getStim,
-		is_html: true,
 		choices: choices,
 		data: {
 			exp_stage: "test",
@@ -754,13 +762,20 @@ var testNode = {
 	}
 }
 
-
+var fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: true
+}
+var exit_fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: false
+}
 
 /* create experiment definition array */
 spatial_task_switching_rdoc_experiment = []
 var spatial_task_switching_rdoc_init = () => {
 
-	// document.body.style.background = 'gray' //// CHANGE THIS
+	document.body.style.background = 'gray' //// CHANGE THIS
 
 	jsPsych.pluginAPI.preloadImages(images);
 
@@ -768,14 +783,16 @@ var spatial_task_switching_rdoc_init = () => {
 	task_switches = makeTaskSwitches(practice_len)
 	stims = createTrialTypes(task_switches)
 
+	spatial_task_switching_rdoc_experiment.push(fullscreen)
+
 	spatial_task_switching_rdoc_experiment.push(instruction_node)
 	spatial_task_switching_rdoc_experiment.push(practiceNode)
-	spatial_task_switching_rdoc_experiment.push(feedback_block)
 
 	spatial_task_switching_rdoc_experiment.push(start_test_block)
 	spatial_task_switching_rdoc_experiment.push(testNode)
-	spatial_task_switching_rdoc_experiment.push(feedback_block)
 
 	spatial_task_switching_rdoc_experiment.push(post_task_block)
 	spatial_task_switching_rdoc_experiment.push(end_block)
+
+	spatial_task_switching_rdoc_experiment.push(exit_fullscreen)
 }
