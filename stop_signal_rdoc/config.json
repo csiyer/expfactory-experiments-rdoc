@@ -9,7 +9,7 @@
                 "static/jspsych7/plugin-html-keyboard-response.js",
                 "static/jspsych7/plugin-html-button-response.js",
                 "static/jspsych7/plugin-survey-text.js",
-                "static/jspsych7/plugin-categorize-html.js",
+                "static/jspsych7/plugin-fullscreen.js",
                 "static/jspsych7/plugin-call-function.js",
                 "static/jspsych7/jspsych.css",
                 "static/jspsych7/poldrack-plugins/plugin-stop-signal.js",

@@ -2,7 +2,7 @@
 /*********    RDoC/Network Default CSS Styles    *******/
 /*******************************************************/
 
-.display_stage {
+/* .display_stage {
     position: fixed;
     background: gray;
     left: 5vw;
@@ -16,6 +16,22 @@
 
 .display_stage > div, .display_stage > p {
   color: white;
+} */
+
+.jspsych-display-element {
+  position: fixed;
+  background: gray;
+  left: 5vw;
+  top: 2vh;
+  height: 94vh;
+  width: 90vw;
+  border-radius: 15px;
+  border: 1vh solid #D0D0D0;
+  z-index: 0;
+}
+
+.jspsych-display-element > div, .jspsych-display-element > p {
+color: white;
 }
 
 .flanker-text {

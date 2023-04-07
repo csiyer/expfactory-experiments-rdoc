@@ -289,7 +289,7 @@ var instructions_block = {
 	    '<p class = block-text>In this experiment, ' + stims[0][0] + ' and ' + stims[1][0] + ' squares will appear on the screen. </p>'+
 	    '<p class = block-text>If you see the <b>' + stims[0][0] + ' square</b>, you should respond by <b>pressing the spacebar as quickly as possible</b>. </p>'+
 	    '<p class = block-text>If you see the <b>' + stims[1][0] + ' square</b>, you should <b>not respond</b>.</p>'+
-		speed_reminder + '<p class = block-text>You\'ll start with a practice round. During practice, you will receive feedback and a reminder of the rules. These will be taken out for the test, so make sure you understand the instructions before moving on.</p>'+
+		speed_reminder + '<p class = block-text>We\'ll start with a practice round. During practice, you will receive feedback and a reminder of the rules. These will be taken out for the test, so make sure you understand the instructions before moving on.</p>'+
 	'</div>'
   ],
   allow_keys: false,
@@ -358,7 +358,6 @@ var feedback_block = {
 	choices: ['Enter'],
 	stimulus: getFeedback,
 	post_trial_gap: 0,
-	is_html: true,
 	trial_duration: 180000,
 	response_ends_trial: true, 
 };
@@ -366,7 +365,6 @@ var feedback_block = {
 var fixation_block = {
 	type: jsPsychHtmlKeyboardResponse,
 	stimulus: '<div class = centerbox><div class = fixation>+</div></div>',
-	is_html: true,
 	choices: ['NO_KEYS'],
 	data: {
 		trial_id: "fixation",
@@ -379,7 +377,6 @@ var fixation_block = {
 var prompt_fixation_block = {
 	type: jsPsychHtmlKeyboardResponse,
 	stimulus: '<div class = centerbox><div class = fixation>+</div></div>',
-	is_html: true,
 	choices: 'none',
 	data: {
 		trial_id: "prompt_fixation",
@@ -395,28 +392,9 @@ var prompt_fixation_block = {
 var get_practiceNode = function() {
 	var practiceTrials = []
 	for (var i = 0; i < practice_len; i ++){
-		// var practice_block = {
-		// 	type: jsPsychCategorizeHtml,
-		// 	stimulus: getStim,
-		// 	is_html: true,
-		// 	data: getData,
-		// 	key_answer: getCorrectResponse,
-		// 	correct_text: '<div class = fb_box><div class = center-text>Correct!</div></div>' + prompt_text,
-		// 	incorrect_text: '<div class = fb_box><div class = center-text>The shape was outlined</div></div>' + prompt_text, 
-		// 	timeout_message: getFeedback,
-		// 	choices: [possible_responses],
-		// 	trial_duration: 1000, //2000
-		// 	stimulus_duration: 1000, //1000
-		// 	feedback_duration: 1000,
-		// 	show_stim_with_feedback: true,
-		// 	post_trial_gap: 0,
-		// 	on_finish: appendData,
-		// 	prompt: prompt_text
-		// }
 		var practice_block = {
 			type: jsPsychHtmlKeyboardResponse,
 			stimulus: getStim,
-			is_html: true,
 			data: getData,
 			choices: [possible_responses],
 			trial_duration: 1000, //2000
@@ -426,7 +404,8 @@ var get_practiceNode = function() {
 			on_finish: appendData,
 			prompt: prompt_text
 		}
-		var practice_post_trial_feedback = { // adding this and shortening actual trial to 1000ms
+
+		var practice_feedback_block = { // adding this and shortening actual trial to 1000ms
 			type: jsPsychHtmlKeyboardResponse,
 			stimulus: function () {
 				var last = jsPsych.data.get().last(1).values()[0]
@@ -447,9 +426,9 @@ var get_practiceNode = function() {
 			data: {trial_id: 'practice_post_trial_gap'},
 			choices: ["NO_KEYS"],
 			prompt: prompt_text,
-			trial_duration: 1000
+			trial_duration: 500
 		}
-		practiceTrials.push(prompt_fixation_block, practice_block, practice_post_trial_feedback)
+		practiceTrials.push(prompt_fixation_block, practice_block, practice_feedback_block)
 	}
 
 	var practiceCount = 0
@@ -458,7 +437,6 @@ var get_practiceNode = function() {
 		loop_function: function(data){
 			practiceCount += 1
 			current_trial = 0
-			block_stims = jsPsych.randomization.repeat(practice_stimuli, practice_len / practice_stimuli.length); 
 		
 			var sum_rt = 0
 			var sum_responses = 0
@@ -514,6 +492,7 @@ var get_practiceNode = function() {
 					return false
 				} else {
 					feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
+					block_stims = jsPsych.randomization.repeat(practice_stimuli, practice_len / practice_stimuli.length); 
 					return true
 				}
 			}
@@ -532,7 +511,6 @@ var get_testNode = function () {
 		var test_block = {
 			type: jsPsychHtmlKeyboardResponse,
 			stimulus: getStim,
-			is_html: true,
 			choices: [possible_responses],
 			data: getData,
 			post_trial_gap: 0,
@@ -608,6 +586,15 @@ var get_testNode = function () {
 	return testNode
 }
 
+var fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: true
+}
+var exit_fullscreen = {
+  type: jsPsychFullscreen,
+  fullscreen_mode: false
+}
+
 
 //// initialize the experiment
 var go_nogo_rdoc_experiment = [];
@@ -617,6 +604,8 @@ var go_nogo_rdoc_init = () => {
 
 	block_stims = jsPsych.randomization.repeat(practice_stimuli, practice_len / practice_stimuli.length); //initialize
 	
+	go_nogo_rdoc_experiment.push(fullscreen)
+
 	go_nogo_rdoc_experiment.push(instruction_node)
 	go_nogo_rdoc_experiment.push(get_practiceNode())
 
@@ -625,4 +614,6 @@ var go_nogo_rdoc_init = () => {
 
 	go_nogo_rdoc_experiment.push(post_task_block)
 	go_nogo_rdoc_experiment.push(end_block)
+
+	go_nogo_rdoc_experiment.push(exit_fullscreen)
 }

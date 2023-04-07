@@ -3,59 +3,64 @@
 /* ************************************ */
 
 function addID() {
-  jsPsych.data.addDataToLastTrial({exp_id: 'spatial_cueing_rdoc'})
+	jsPsych.data.get().addToLast({exp_id: 'spatial_cueing_rdoc'})
 }
 
 function assessPerformance() {
 	/* Function to calculate the "credit_var", which is a boolean used to
 	credit individual experiments in expfactory. 
 	 */
-	var experiment_data = jsPsych.data.getTrialsOfType('poldrack-single-stim')
+	var experiment_data = jsPsych.data.get().filter({exp_stage: 'test', trial_id: 'stim'}).trials
 	var missed_count = 0
 	var trial_count = 0
 	var rt_array = []
 	var rt = 0
-		//record choices participants made
+	var correct = 0
+
+	//record choices participants made
 	var choice_counts = {}
-	choice_counts[-1] = 0
+	choice_counts[null] = 0
 	for (var k = 0; k < choices.length; k++) {
 		choice_counts[choices[k]] = 0
 	}
+
 	for (var i = 0; i < experiment_data.length; i++) {
-		if (experiment_data[i].possible_responses != 'none') {
-			trial_count += 1
-			rt = experiment_data[i].rt
-			key = experiment_data[i].key_press
-			choice_counts[key] += 1
-			if (rt == -1) {
-				missed_count += 1
-			} else {
-				rt_array.push(rt)
-			}
+		trial_count += 1
+		rt = experiment_data[i].rt
+		key = experiment_data[i].key_press
+		correct += experiment_data[i].correct_trial
+		choice_counts[key] += 1
+		if (rt == null) {
+			missed_count += 1
+		} else {
+			rt_array.push(rt)
 		}
 	}
 	//calculate average rt
-	var avg_rt = -1
+	var avg_rt = null
 	if (rt_array.length !== 0) {
 		avg_rt = math.median(rt_array)
 	} 
-		//calculate whether response distribution is okay
+	//calculate whether response distribution is okay
 	var responses_ok = true
 	Object.keys(choice_counts).forEach(function(key, index) {
 		if (choice_counts[key] > trial_count * 0.85) {
 			responses_ok = false
 		}
 	})
-	var missed_percent = missed_count/trial_count
-	credit_var = (missed_percent < 0.4 && avg_rt > 200 && responses_ok)
-	jsPsych.data.addDataToLastTrial({"credit_var": credit_var})
+	var credit_var = (missed_percent < 0.4 && avg_rt > 200 && responses_ok)
+	jsPsych.data.get().addToLast({final_credit_var: credit_var,
+								final_missed_percent: missed_count/trial_count,
+								final_avg_rt: avg_rt,
+								final_responses_ok: responses_ok,
+								final_accuracy: correct/trial_count})
 
 }
 
 function evalAttentionChecks() {
 	var check_percent = 1
 	if (run_attention_checks) {
-		var attention_check_trials = jsPsych.data.getTrialsOfType('attention-check')
+		var attention_check_trials = jsPsych.data.get().filter({trial_id: 'attention_check'}).trials
 		var checks_passed = 0
 		for (var i = 0; i < attention_check_trials.length; i++) {
 			if (attention_check_trials[i].correct === true) {
@@ -64,19 +69,26 @@ function evalAttentionChecks() {
 		}
 		check_percent = checks_passed / attention_check_trials.length
 	}
+	jsPsych.data.get().addToLast({"att_check_percent": check_percent})
 	return check_percent
 }
 
-var getInstructFeedback = function() {
-	return '<div class = centerbox><p class = center-block-text>' + feedback_instruct_text +
-		'</p></div>'
+function appendData() {
+	var data = jsPsych.data.get().last(1).values()[0]
+	correct_trial = 0
+	if (data.response == data.correct_response) {
+		correct_trial = 1
+	}
+	jsPsych.data.get().addToLast({correct_trial: correct_trial})
 }
 
+var getInstructFeedback = function() {
+return '<div class = centerbox><p class = center-block-text>' + feedback_instruct_text +
+	'</p></div>'
+}
 
-// delete????
-var post_trial_gap = function() {
-	var curr_trial = jsPsych.progress().current_trial_global
-	return 3500 - jsPsych.data.getData()[curr_trial - 1].block_duration - jsPsych.data.getData()[curr_trial - 4].block_duration
+var getFeedback = function() {
+	return '<div class = bigbox><div class = picture_box><p class = block-text>' + feedback_text + '</font></p></div></div>' //<font color="white">
 }
 
 /* ************************************ */
@@ -87,12 +99,16 @@ var run_attention_checks = false
 var attention_check_thresh = 0.65
 var sumInstructTime = 0 //ms
 var instructTimeThresh = 0 ///in seconds
-var credit_var = true
+
+var accuracy_thresh = 0.75
+var rt_thresh = 1000
+var missed_response_thresh = 0.10
+var practice_thresh = 3 // 3 blocks max
+var numTestBlocks = 3
 
 // task specific variables
-
-
-
+var possible_responses = [['index finger', ',', 'comma key (,)'], ['middle finger', '.', 'period key (.)']] // [instruct_name, key_code, key_description]
+var choices = [possible_responses[0][1], possible_responses[1][1]]
 
 /* set up stim: location (2) * cue (4) * direction (2) * condition (3) */
 var locations = ['up', 'down']
@@ -100,11 +116,10 @@ var cues = ['nocue', 'center', 'double', 'spatial']
 var current_trial = 0
 var exp_stage = 'practice'
 var test_stimuli = []
-var choices = [37, 39]
-var path = '/static/experiments/attention_network_task/images/'
+
+// images to preload
+var path = '/static/experiments/spatial_cueing_rdoc/images/'
 var images = [path + 'right_arrow.png', path + 'left_arrow.png', path + 'no_arrow.png']
-//preload
-jsPsych.pluginAPI.preloadImages(images)
 
 for (l = 0; l < locations.length; l++) {
 	var loc = locations[l]
@@ -576,3 +591,11 @@ for (b = 0; b < blocks.length; b++) {
 }
 attention_network_task_experiment.push(post_task_block)
 attention_network_task_experiment.push(end_block)
+
+
+
+spatial_cueing_rdoc_init = () => {
+	
+	jsPsych.pluginAPI.preloadImages(images)
+
+}
