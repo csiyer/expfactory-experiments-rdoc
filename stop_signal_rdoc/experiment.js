@@ -12,9 +12,9 @@ function evalAttentionChecks() {
 		var attention_check_trials = jsPsych.data.get().filter({trial_id: 'attention_check'}).trials
 		var checks_passed = 0
 		for (var i = 0; i < attention_check_trials.length; i++) {
-		if (attention_check_trials[i].correct === true) {
-			checks_passed += 1
-		}
+      if (attention_check_trials[i].correct === true) {
+        checks_passed += 1
+      }
 		}
 		check_percent = checks_passed / attention_check_trials.length
 	}
@@ -78,7 +78,7 @@ function assessPerformance() {
 }
 
 var getFeedback = function() {
-	return '<div class = bigbox><div class = picture_box><p class = block-text><font color="white">' + feedback_text + '</font></p></div></div>'
+	return '<div class = bigbox><div class = picture_box><p class = block-text>' + feedback_text + '</p></div></div>'
 }
 
 var getInstructFeedback = function() {
@@ -88,7 +88,7 @@ var getInstructFeedback = function() {
 var getCategorizeFeedback = function(){
 	var last = jsPsych.data.get().last(1).trials[0]
 	if (last.trial_id == 'practice_trial') {
-		if (last.stop_signal_condition=='go') {
+		if (last.SS_trial_type =='go') {
 			if (last.response == null) {
 				return '<div class = fb_box><div class = center-text><font size = 20>Respond Faster!</font></div></div>' + prompt_text
 			} else if (last.response == last.correct_response) {
@@ -97,7 +97,7 @@ var getCategorizeFeedback = function(){
 				return '<div class = fb_box><div class = center-text><font size = 20>Incorrect</font></div></div>' + prompt_text
 			}
 		} else { //stop
-			if (last.rt == null) {
+			if (last.rt == -1) {
 				return '<div class = fb_box><div class = center-text><font size = 20>Correct!</font></div></div>' + prompt_text
 			} else {
 				return '<div class = fb_box><div class = center-text><font size = 20>There was a star</font></div></div>' + prompt_text
@@ -164,53 +164,23 @@ function getSSD(){
 }
 
 function getSSType(){
-	return stop_signal_condition
+	return stop_signal_conditions[0]
 }
 
-var appendData = function(){
-	var last = jsPsych.data.get().last(1).trials[0]
-	current_trial+=1
-
-	if (exp_phase == "practice1"){
-		currBlock = practiceCount
-	} else if (exp_phase == "practice2"){
-		currBlock = practiceStopCount
-	} else if (exp_phase == "test"){
-		currBlock = testCount
-	}
-	
-	if ((exp_phase == "practice1") || (exp_phase == "practice2") || (exp_phase == "test")){
-		jsPsych.data.get().addToLast({
-			stim: stimData.stim,
-			correct_response: correct_response,	
-			current_block: currBlock,
-			current_trial: current_trial,
-			stop_signal_condition: stimData.stop_signal_condition
-		})
-		
-		var correct_current = 0
-		if (last.response == correct_response){
-			correct_trial = 1
-		}
-		jsPsych.data.get().addToLast({
-			correct_trial: correct_current
-		})
-	}
-	
+var appendData = function(data){
 	if ((exp_phase == "test") || (exp_phase == "practice2")){	
-		
-		if ((last.response == null) && (last.stop_signal_condition == 'stop') && (SSD < maxSSD)){
-			jsPsych.data.get().addToLast({stop_acc: 1})
-			SSD+=50
-		} else if ((last.response != -1) && (last.stop_signal_condition == 'stop') && (SSD > minSSD)){
-			jsPsych.data.get().addToLast({stop_acc: 0})
-			SSD-=50
+		if ((data.response == -1) && (data.stop_signal_condition == 'stop') && (SSD < maxSSD)){
+      data['stop_acc'] = 1
+			SSD += 50
+		} else if ((data.response != -1) && (data.stop_signal_condition == 'stop') && (SSD > minSSD)){
+      data['stop_acc'] = 0
+			SSD -= 50
 		}
 	
-		if ((last.response == last.correct_response) && (last.stop_signal_condition == 'go')){
-			jsPsych.data.get().addToLast({go_acc: 1})
-		} else if ((jsPsych.data.getDataByTrialIndex(curr_trial).key_press != jsPsych.data.getDataByTrialIndex(curr_trial).correct_response) && (jsPsych.data.getDataByTrialIndex(curr_trial).stop_signal_condition == 'go')){
-			jsPsych.data.get().addToLast({go_acc: 0})
+		if (data.correct && data.stop_signal_condition == 'go'){
+      data['go_acc'] = 1
+		} else if (!data.correct && data.stop_signal_condition == 'go'){
+      data['go_acc'] = 0
 		}
 	}
 }
@@ -224,11 +194,12 @@ var instructTimeThresh = 0 ///in seconds
 var credit_var = 0
 var run_attention_checks = true
 
-
-var practice_len = 24 // 24 must be divisible by 12
-var exp_len = 144 // must be divisible by 12
-var numTrialsPerBlock = 48 // must be divisible by 12
-var numTestBlocks = exp_len / numTrialsPerBlock
+// old comments said 'must be divisible by 12' but that was from shapesused * stop_signal_conditions.length
+var practice_len = 2
+var exp_len = 10
+var numTrialsPerBlock = 4
+// var numTestBlocks = exp_len / numTrialsPerBlock
+var numTestBlocks = 2
 var practice_thresh = 3 // 3 blocks of 12 trials
 
 var accuracy_thresh = 0.80
@@ -250,7 +221,8 @@ var maxStopCorrectPractice = 1
 var minStopCorrectPractice = 0
 
 
-var stop_signal_conditions = ['go','go','stop']
+var stop_signal_conditions = ['stop','stop','stop']
+var stop_signal_condition
 var shapes = ['circle','square'] //'hourglass', 'Lshape', 'moon', 'oval', 'rectangle', 'rhombus', 'tear', 'trapezoid'
 var color = "black"
 var totalShapesUsed = 2
@@ -287,7 +259,7 @@ var prompt_text = '<div class = prompt_box>'+
 
 var speed_reminder = '<p class = block-text>Try to respond as quickly and accurately as possible.</p>'
 
-var exp_phase = "practice1"
+var exp_phase = "test" // "practice1"
 
 
 /* ************************************ */
@@ -322,8 +294,8 @@ var end_block = {
 	choices: ['Enter'],
 	post_trial_gap: 0,
 	on_finish: function(){
-		  assessPerformance()
-		  evalAttentionChecks()
+		  // assessPerformance()
+		  // evalAttentionChecks()
 	  }
   };
 
@@ -428,7 +400,7 @@ var feedback_block = {
 	stimulus: getFeedback,
 	post_trial_gap: 0,
 	is_html: true,
-	trial_duration: 180000,
+	trial_duration: 18000,
 	response_ends_trial: true, 
 };
 
@@ -485,17 +457,17 @@ var post_task_block = {
 var practiceStopTrials = []
 for (i = 0; i < practice_len; i++) {
 	var practice_block = {
-		type: 'stop-signal',
+		type: jsPoldracklabStopSignal,
 		stimulus: getStim,
 		SS_stimulus: getStopStim,
-		SS_trial_type: getSSType,
+		SS_trial_type: 'stop',
 		data: {
 			trial_id: "practice_trial",
 		},
 		is_html: true,
 		choices: choices,
 		stimulus_duration: 1000, //1000
-		trial_duration: 2000, //2000
+		trial_duration: 5000, //2000
 		response_ends_trial: false,
 		SSD: getSSD,
 		timing_SS: 500, //500
@@ -509,7 +481,7 @@ for (i = 0; i < practice_len; i++) {
 	}
 	
 	var categorize_block = {
-		type: 'poldrack-single-stim',
+    type: jsPsychHtmlKeyboardResponse,
 		data: {
 			trial_id: "practice-stop-feedback"
 		},
@@ -518,7 +490,7 @@ for (i = 0; i < practice_len; i++) {
 		timing_post_trial: 0,
 		is_html: true,
 		timing_stim: 500, //500
-		timing_response: 500, //500
+		trial_duration: 500, //500
 		response_ends_trial: false, 
 
 	};
@@ -612,7 +584,7 @@ var testTrials = []
 //testTrials.push(attention_node)
 for (i = 0; i < numTrialsPerBlock; i++) {
 	var test_block = {
-		type: 'stop-signal',
+		type: jsPoldracklabStopSignal,
 		stimulus: getStim,
 		SS_stimulus: getStopStim,
 		SS_trial_type: getSSType,
@@ -623,6 +595,7 @@ for (i = 0; i < numTrialsPerBlock; i++) {
 		choices: choices,
 		stimulus_duration: 1000, //1000
 		trial_duration: 2000, //2000
+    timing_duration: 2000,
 		response_ends_trial: false,
 		SSD: getSSD,
 		timing_SS: 500, //500
@@ -656,10 +629,10 @@ var testNode = {
 		var stop_length = 0
 		
 		for (i = 0; i < data.trials.length; i++) {
-			if (data[i].trial_id == "test_trial"){
+			if (data.trials[i].trial_id == "test_trial"){
 				total_trials += 1
 			}
-			if (data[i].stop_signal_condition == "go"){
+			if (data.trials[i].stop_signal_condition == "go"){
 				go_length += 1
 				if (data.trials[i].rt != null) {
 					num_go_responses += 1
@@ -720,13 +693,12 @@ var testNode = {
 var stop_signal_rdoc_experiment = []
 
 var stop_signal_rdoc_init = () => {
-	document.body.style.background = 'gray' //// CHANGE THIS
+	// document.body.style.background = 'gray' //// CHANGE THIS
 
 	jsPsych.pluginAPI.preloadImages(images);
 
 	// globals
 	stims = createTrialTypes(numTrialsPerBlock)
-
 	stop_signal_rdoc_experiment.push(instruction_node)
 	stop_signal_rdoc_experiment.push(practiceStopNode)
 	stop_signal_rdoc_experiment.push(feedback_block);

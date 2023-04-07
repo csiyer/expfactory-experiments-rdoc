@@ -12,6 +12,7 @@
                 "static/jspsych7/plugin-categorize-html.js",
                 "static/jspsych7/plugin-call-function.js",
                 "static/jspsych7/jspsych.css",
+                "static/jspsych7/poldrack-plugins/plugin-stop-signal.js",
                 "static/css/default_style.css",
                 "style.css",
                 "experiment.js"
