@@ -308,21 +308,6 @@ var task_boards = ['<div class = bigbox><div class = centerbox><div class = gng_
 // 	}
 // }
 
-var end_block = {
-	type: jsPsychHtmlKeyboardResponse,
-	data: {
-		trial_id: "end"
-	},
-	trial_duration: 180000,
-	stimulus: '<div class = centerbox><p class = center-block-text>Thanks for completing this task!</p><p class = center-block-text>Press <i>enter</i> to continue.</p></div>',
-	choices: ['Enter'],
-	post_trial_gap: 0,
-	on_finish: function(){
-		assessPerformance()
-		evalAttentionChecks()
-    }
-};
-
 //Set up post task questionnaire
 var post_task_block = {
 	type: jsPsychSurveyText,
@@ -332,7 +317,7 @@ var post_task_block = {
 	},
 	questions: [
 	 {
-	   prompt: '<p class = center-block-text style = "font-size: 20px">Please summarize what you were asked to do in this task.</p>',
+	   prompt: '<p class = center-block-text style = "font-size: 20px">You have completed this task! Please summarize what you were asked to do in this task.</p>',
 	   rows: 15,
 	   columns: 60,
 	 },
@@ -343,6 +328,25 @@ var post_task_block = {
 	}
    ]
  };
+
+ var end_block = {
+	type: jsPsychHtmlKeyboardResponse,
+	data: {
+		trial_id: "end",
+    	exp_id: 'n_back_rdoc'
+	},
+	trial_duration: 180000,
+	stimulus: '<div class = centerbox><p class = center-block-text>Thanks for completing this task!</p>' + 
+		'<p class = center-block-text>	If you have been completing tasks continuously for an hour or more, please take a 15-minute break before starting again.</p>' + 
+		'<p class = center-block-text>Press <i>enter</i> to continue.</p>' + 
+		'</div>',
+	choices: ['Enter'],
+	post_trial_gap: 0,
+	on_finish: function() {
+		assessPerformance()
+		evalAttentionChecks()
+	} 
+};
 
  // this also functions as the welcome screen!
 var feedback_instruct_text ='<p class=center-block-text>Welcome! This experiment will take around 5 minutes.</p>' +
@@ -416,28 +420,6 @@ var instruction_node = {
 		}
 	}
 }
-
-var start_test_block = {
-	type: jsPsychHtmlKeyboardResponse,
-	data: {
-		trial_id: "instruction"
-	},
-	trial_duration: 180000,
-	stimulus: '<div class = centerbox>'+
-			'<p class = block-text>We will now begin the test portion.</p>'+
-			'<p class = block-text>Keep your ' + possible_responses[0][0] + ' on the ' + possible_responses[0][2] + ' and your ' + possible_responses[1][0] + ' on the ' + possible_responses[1][2] + '</p>' + 
-			'<p class = block-text>Once again, match the current letter to the letter that appeared either 1, 2, or 3 trials ago depending on the delay given to you for each block.'+
-			'Press your '+possible_responses[0][0]+' if they match, and your '+possible_responses[1][0]+' if they mismatch.</p>'+
-			'<p class = block-text>Your delay (the number of trials ago to which you compare the current letter) will change from block to block.</p>'+
-			'<p class = block-text>Capitalization does not matter, so "T" matches with "t". The first trial(s) will not match, because there was nothing before them.</p> '+	
-			'<p class = block-text>You will no longer see the rules, so memorize the instructions before you continue. Press <i>enter</i> to begin.</p>'+
-		 '</div>',
-	choices: ['Enter'],
-	post_trial_gap: 1000,
-	on_finish: function(){
-		feedback_text = "<p class = center-block-text>Your delay for this block is "+delay+". <br>Please match the current letter to the letter that appeared "+delay+" trial(s) ago. <br>Press <i>enter</i> to begin.</p>"
-	}
-};
 
 var start_control_block = {
 	type: jsPsychHtmlKeyboardResponse,
@@ -536,7 +518,6 @@ var get_practiceNode = function() {
 		timeline: [feedback_block].concat(practiceTrials),
 		loop_function: function(data) {
 			practiceCount += 1
-			stims = createTrialTypes(practice_len, delay)
 			current_trial = 0
 		
 			var sum_rt = 0
@@ -566,17 +547,26 @@ var get_practiceNode = function() {
 			var missed_responses = (total_trials - sum_responses) / total_trials
 			var ave_rt = sum_rt / sum_responses
 			var mismatch_press_percentage = mismatch_press / total_trials
-	
-			feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!</p>"
 
-			if (accuracy > accuracy_thresh){
-				feedback_text += '<p class = block-text>Done with this practice. Press <i>enter</i> to continue.</p>' 
+			if (accuracy > accuracy_thresh || practiceCount == practice_thresh){
+				feedback_text = '<div class = centerbox>'+
+					'<p class = block-text>We will now begin the test portion.</p>'+
+					'<p class = block-text>Keep your ' + possible_responses[0][0] + ' on the ' + possible_responses[0][2] + ' and your ' + possible_responses[1][0] + ' on the ' + possible_responses[1][2] + '</p>' + 
+					'<p class = block-text>Once again, match the current letter to the letter that appeared either 1, 2, or 3 trials ago depending on the delay given to you for each block.'+
+					'Press your '+possible_responses[0][0]+' if they match, and your '+possible_responses[1][0]+' if they mismatch.</p>'+
+					'<p class = block-text>Your delay (the number of trials ago to which you compare the current letter) will change from block to block.</p>'+
+					'<p class = block-text>Capitalization does not matter, so "T" matches with "t". The first trial(s) will not match, because there was nothing before them.</p> '+	
+					'<p class = block-text>You will no longer see the rules, so memorize the instructions before you continue. Press <i>enter</i> to begin.</p>'+
+					'</div>'
 				delay = delays.pop()
 				stims = createTrialTypes(numTrialsPerBlock, delay)
 				return false
 		  
-			} else { // accuracy < accuracy_thresh
-				feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + prompt_text_list 
+			} else { 
+				feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!</p>"
+				if (accuracy < accuracy_thresh) {
+					feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + prompt_text_list 
+				}	
 				if (ave_rt > rt_thresh){
 					feedback_text += '<p class = block-text>You have been responding too slowly.' + speed_reminder + '</p>'
 				}
@@ -586,16 +576,9 @@ var get_practiceNode = function() {
 				if (mismatch_press_percentage >= 0.90){
 					feedback_text += '</p><p class = block-text>Please do not simply press your '+possible_responses[1][0]+' to every stimulus. Please try to identify the matches and press your '+possible_responses[0][0]+' when they occur.'
 				}
-		
-				if (practiceCount == practice_thresh) {
-					feedback_text += '<p class = block-text>Done with this practice. Press <i>enter</i> to continue.</p>' 
-					delay = delays.pop()
-					stims = createTrialTypes(numTrialsPerBlock, delay)
-					return false
-				} else {
-					feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
-					return true
-				}
+				feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
+				stims = createTrialTypes(practice_len, delay)
+				return true
 			}
 		}
 	}
@@ -658,31 +641,29 @@ var get_testNode = function() {
 			var ave_rt = sum_rt / sum_responses
 			var mismatch_press_percentage = mismatch_press / total_trials
 		
-			feedback_text = "<p>Please take this time to read your feedback and to take a short break! Press <i>enter</i> to continue." +
-			"<br>You have completed " +testCount+ " out of " +numTestBlocks+ " blocks of trials.</p>"
-
-			if (accuracy < accuracy_thresh){
-				feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: </p>' + prompt_text_list 
-			}
-			if (missed_responses > missed_response_thresh){
-				feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
-			}
-
-			if (ave_rt > rt_thresh){
-				feedback_text += '<p class = block-text>You have been responding too slowly.</p>'
-			}
-			
-			if (mismatch_press_percentage >= 0.90){
-				feedback_text += '<p class = block-text>Please do not simply press your '+possible_responses[1][0]+' to every stimulus. Please try to identify the matches and press your '+possible_responses[0][0]+' when they occur.</p>'
-			}
-		
 			if (testCount == numTestBlocks){
 				feedback_text += '<p class = block-text>Done with this test. Press <i>enter</i> to continue.<br> If you have been completing tasks continuously for an hour or more, please take a 15-minute break before starting again.</p>'
 				return false
 			} else {
+				feedback_text = "<p>Please take this time to read your feedback and to take a short break! Press <i>enter</i> to continue." +
+					"<br>You have completed " +testCount+ " out of " +numTestBlocks+ " blocks of trials.</p>"
+				if (accuracy < accuracy_thresh){
+					feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: </p>' + prompt_text_list 
+				}
+				if (missed_responses > missed_response_thresh){
+					feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
+				}
+
+				if (ave_rt > rt_thresh){
+					feedback_text += '<p class = block-text>You have been responding too slowly.</p>'
+				}
+				
+				if (mismatch_press_percentage >= 0.90){
+					feedback_text += '<p class = block-text>Please do not simply press your '+possible_responses[1][0]+' to every stimulus. Please try to identify the matches and press your '+possible_responses[0][0]+' when they occur.</p>'
+				}
+				feedback_text += "<p class = block-text><i>For the next round of trials, your delay is "+delay+"</i>.  Press <i>enter</i> to continue.</p>"
 				delay = delays.pop()
 				stims = createTrialTypes(numTrialsPerBlock, delay)
-				feedback_text += "<p class = block-text><i>For the next round of trials, your delay is "+delay+"</i>.  Press <i>enter</i> to continue.</p>"
 				return true
 			}
 		}
@@ -719,9 +700,8 @@ var n_back_rdoc_init = () => {
 	n_back_rdoc_experiment.push(fullscreen)
 
 	n_back_rdoc_experiment.push(instruction_node)
-	n_back_rdoc_experiment.push(get_practiceNode());
 
-	n_back_rdoc_experiment.push(start_test_block);
+	n_back_rdoc_experiment.push(get_practiceNode());
 	n_back_rdoc_experiment.push(get_testNode());
 
 	n_back_rdoc_experiment.push(post_task_block);

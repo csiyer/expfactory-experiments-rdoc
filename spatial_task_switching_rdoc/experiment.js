@@ -387,27 +387,6 @@ for(i=0;i<numbersPreload.length;i++){
 // 	}
 // }
 
-//Set up post task questionnaire
-var post_task_block = {
-	type: jsPsychSurveyText,
-	data: {
-		exp_id: "spatial_task_switching_rdoc",
-		trial_id: "post task questions"
-	},
-	questions: [
-	 {
-	   prompt: '<p class = center-block-text style = "font-size: 20px">Please summarize what you were asked to do in this task.</p>',
-	   rows: 15,
-	   columns: 60,
-	 },
-	 {
-	   prompt: '<p class = center-block-text style = "font-size: 20px">Do you have any comments about this task?</p>',
-	   rows: 15,
-	   columns: 60,
-	}
-   ]
- };
-
  var feedback_text = '<div class = centerbox><p class = center-block-text>Press <i>enter</i> to begin practice.</p></div>'
  var feedback_block = {
    type: jsPsychHtmlKeyboardResponse,
@@ -484,47 +463,42 @@ var instruction_node = {
 	}
 }
 
-var end_block = {
+var post_task_block = {
+	type: jsPsychSurveyText,
+	data: {
+		exp_id: "spatial_task_switching_rdoc",
+		trial_id: "post task questions"
+	},
+	questions: [
+	 {
+	   prompt: '<p class = center-block-text style = "font-size: 20px">You have completed this task! Please summarize what you were asked to do in this task.</p>',
+	   rows: 15,
+	   columns: 60,
+	 },
+	 {
+	   prompt: '<p class = center-block-text style = "font-size: 20px">Do you have any comments about this task?</p>',
+	   rows: 15,
+	   columns: 60,
+	}
+   ]
+ };
+ var end_block = {
 	type: jsPsychHtmlKeyboardResponse,
 	data: {
-	  trial_id: "end",
-	},
-	stimulus: '<div class = centerbox><p class = center-block-text>Thanks for completing this task!</p><p class = center-block-text>Press <i>enter</i> to continue.</p></div>',
-	choices: ['Enter'],
-	trial_duration: 180000,
-	on_finish: function(data){
-	  assessPerformance()
-	  evalAttentionChecks()
-	}
-  };
-
-var start_test_block = {
-	type: jsPsychHtmlKeyboardResponse,
-	data: {
-		trial_id: "start_test_block"
+		trial_id: "end",
+    	exp_id: 'spatial_task_switching_rdoc'
 	},
 	trial_duration: 180000,
-	stimulus: '<div class = centerbox>'+
-			'<p class = block-text>We will now start the test portion.</p>'+
-			'<p class = block-text>Keep your index finger on the ' + possible_responses[0][2] + ' and your middle finger on the ' + possible_responses[1][2] + ' key.</p>' + 
-			
-			'<p class = block-text>In the top two quadrants, please judge the number based on <b>'+predictable_dimensions_list[0].dim+predictable_dimensions_list[0].exp+'</b>. Press your <b>'+possible_responses[0][0]+
-			' if '+predictable_dimensions_list[0].values[0]+'</b>, and the <b>'+possible_responses[1][0]+' if '+predictable_dimensions_list[0].values[1]+'</b>.</p>'+
-		
-			'<p class = block-text>In the bottom two quadrants, please judge the number based on <b>'+predictable_dimensions_list[1].dim+predictable_dimensions_list[1].exp+'.</b>'+
-			' Press the <b>'+possible_responses[0][0]+' if '+predictable_dimensions_list[1].values[0]+'</b>, and the <b>'+possible_responses[1][0]+
-			' if '+predictable_dimensions_list[1].values[1]+'</b>.</p>' + 
-
-			speed_reminder +
-			'<p class = block-text>We will no longer display the rules, so memorize the instructions before you continue. Press <i>enter</i> to begin.</p>'+ 
-		 '</div>',
+	stimulus: '<div class = centerbox><p class = center-block-text>Thanks for completing this task!</p>' + 
+		'<p class = center-block-text>	If you have been completing tasks continuously for an hour or more, please take a 15-minute break before starting again.</p>' + 
+		'<p class = center-block-text>Press <i>enter</i> to continue.</p>' + 
+		'</div>',
 	choices: ['Enter'],
-	post_trial_gap: 1000,
-	on_finish: function(){
-		current_trial = 0
-    	feedback_text = 'Starting a test block. Press <i>enter</i> to continue.'
-    	exp_stage = 'test'
-	}
+	post_trial_gap: 0,
+	on_finish: function() {
+		assessPerformance()
+		evalAttentionChecks()
+	} 
 };
 
 var practiceTrials = []
@@ -625,39 +599,44 @@ var practiceNode = {
 		var accuracy = correct / total_trials
 		var missed_responses = (total_trials - sum_responses) / total_trials
 		var ave_rt = sum_rt / sum_responses
-	
-		feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!</p>"
 
-		if (accuracy > accuracy_thresh){
-			feedback_text += '<p class = block-text>No feedback: done with this practice. Press <i>enter</i> to continue.</p>' 
+		if (accuracy > accuracy_thresh || practiceCount == practice_thresh){
+			feedback_text = '<div class = centerbox>'+
+						'<p class = block-text>We will now start the test portion.</p>'+
+						'<p class = block-text>Keep your index finger on the ' + possible_responses[0][2] + ' and your middle finger on the ' + possible_responses[1][2] + ' key.</p>' + 
+						
+						'<p class = block-text>In the top two quadrants, please judge the number based on <b>'+predictable_dimensions_list[0].dim+predictable_dimensions_list[0].exp+'</b>. Press your <b>'+possible_responses[0][0]+
+						' if '+predictable_dimensions_list[0].values[0]+'</b>, and the <b>'+possible_responses[1][0]+' if '+predictable_dimensions_list[0].values[1]+'</b>.</p>'+
+					
+						'<p class = block-text>In the bottom two quadrants, please judge the number based on <b>'+predictable_dimensions_list[1].dim+predictable_dimensions_list[1].exp+'.</b>'+
+						' Press the <b>'+possible_responses[0][0]+' if '+predictable_dimensions_list[1].values[0]+'</b>, and the <b>'+possible_responses[1][0]+
+						' if '+predictable_dimensions_list[1].values[1]+'</b>.</p>' + 
+			
+						speed_reminder +
+						'<p class = block-text>We will no longer display the rules, so memorize the instructions before you continue. Press <i>enter</i> to begin.</p>'+ 
+					 '</div>'
 			task_switches = makeTaskSwitches(numTrialsPerBlock)
 			stims = createTrialTypes(task_switches)
 			return false
 	
-		} else { // accuracy < accuracy_thresh
-			feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + prompt_text_list 
+		} else { 
+			feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!</p>"
+			if (accuracy < accuracy_thresh) {
+				feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + prompt_text_list 
+			}
 			if (ave_rt > rt_thresh){
 				feedback_text += '<p class = block-text>You have been responding too slowly.' + speed_reminder + '</p>'
 			}
 			if (missed_responses > missed_response_thresh){
 				feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
 			}
-
-			if (practiceCount == practice_thresh) {
-				feedback_text += '<p class = block-text>Done with this practice. Press <i>enter</i> to continue.</p>' 
-				task_switches = makeTaskSwitches(numTrialsPerBlock)
-				stims = createTrialTypes(task_switches)
-				return false
-			} else {
-				feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
-				task_switches = makeTaskSwitches(practice_len)
-				stims = createTrialTypes(task_switches)
-				return true
-			}
+			feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
+			task_switches = makeTaskSwitches(practice_len)
+			stims = createTrialTypes(task_switches)
+			return true
 		} 
 	}
 }
-
 
 var testTrials = []
 // testTrials.push(attention_©node)
@@ -711,8 +690,6 @@ var testNode = {
 	timeline: [feedback_block].concat(testTrials),
 	loop_function: function(data) {
 		testCount += 1
-		task_switches = makeTaskSwitches(numTrialsPerBlock)
-		stims = createTrialTypes(task_switches)
 		current_trial = 0
 	
 		var sum_rt = 0
@@ -737,26 +714,26 @@ var testNode = {
 		var missed_responses = (total_trials - sum_responses) / total_trials
 		var ave_rt = sum_rt / sum_responses
 
-		feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!<br>"
-		feedback_text += "You have completed: "+testCount+" out of "+numTestBlocks+" blocks of trials.</p>"
-		
-		if (accuracy < accuracy_thresh){
-		feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: </p>' + prompt_text_list 
-		}
-		if (missed_responses > missed_response_thresh){
-		feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
-		}
-
-		if (ave_rt > rt_thresh) {
-		feedback_text += 
-			'<p class = block-text>You have been responding too slowly. Try to respond as quickly and accurately as possible.</p>'
-		}
-	
 		if (testCount >= numTestBlocks){
-			feedback_text += '</p><p class = block-text>Done with this test. Press <i>enter</i> to continue. <br>If you have been completing tasks continuously for one hour or more, please take a 15-minute break before starting again.'
+			feedback_text = '</p><p class = block-text>Done with this test. Press <i>enter</i> to continue. <br>If you have been completing tasks continuously for one hour or more, please take a 15-minute break before starting again.'
 			return false
 		} else {
+			feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!<br>"
+			feedback_text += "You have completed: "+testCount+" out of "+numTestBlocks+" blocks of trials.</p>"
+			
+			if (accuracy < accuracy_thresh){
+			feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: </p>' + prompt_text_list 
+			}
+			if (missed_responses > missed_response_thresh){
+			feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
+			}
+			if (ave_rt > rt_thresh) {
+			feedback_text += 
+				'<p class = block-text>You have been responding too slowly. Try to respond as quickly and accurately as possible.</p>'
+			}
 			feedback_text += '<p class = block-text>Press <i>enter</i> to continue.</p>'
+			task_switches = makeTaskSwitches(numTrialsPerBlock)
+			stims = createTrialTypes(task_switches)
 			return true
 		}
 	}
@@ -788,7 +765,6 @@ var spatial_task_switching_rdoc_init = () => {
 	spatial_task_switching_rdoc_experiment.push(instruction_node)
 	spatial_task_switching_rdoc_experiment.push(practiceNode)
 
-	spatial_task_switching_rdoc_experiment.push(start_test_block)
 	spatial_task_switching_rdoc_experiment.push(testNode)
 
 	spatial_task_switching_rdoc_experiment.push(post_task_block)

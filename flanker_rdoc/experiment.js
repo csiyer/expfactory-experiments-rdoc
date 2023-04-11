@@ -232,7 +232,7 @@ var post_task_block = {
 	},
 	questions: [
 	 {
-	   prompt: '<p class = center-block-text style = "font-size: 20px">Please summarize what you were asked to do in this task.</p>',
+	   prompt: '<p class = center-block-text style = "font-size: 20px">You have completed this task! Please summarize what you were asked to do in this task.</p>',
 	   rows: 15,
 	   columns: 60,
 	 },
@@ -302,33 +302,21 @@ var instruction_node = {
 
 var end_block = {
 	type: jsPsychHtmlKeyboardResponse,
-	trial_duration: 180000,
 	data: {
 		trial_id: "end",
-	},
-	stimulus: '<div class = centerbox><p class = center-block-text>Thanks for completing this task!</p><p class = center-block-text>Press <i>enter</i> to continue.</p></div>',
-	choices: ['Enter'],
-	post_trial_gap: 0,
-	on_finish: function(){
-		assessPerformance()
-		evalAttentionChecks()
-    }
-};
-
-var start_test_block = {
-	type: jsPsychHtmlKeyboardResponse,
-	data: {
-		trial_id: "test_intro"
+    	exp_id: 'flanker_rdoc'
 	},
 	trial_duration: 180000,
-	stimulus: '<div class = centerbox><p class = block-text>We will now start the test portion.</p>' +
-	'<p class = block-text>Keep your ' + response_keys.key_name[0] + ' on the ' + response_keys.key_description[0] + ' key and your ' + response_keys.key_name[1] + ' on the ' + response_keys.key_description[1] + ' key.</p>' + 
-	'<p class = block-text>Press <i>enter</i> to begin.</p></div>',
+	stimulus: '<div class = centerbox><p class = center-block-text>Thanks for completing this task!</p>' + 
+		'<p class = center-block-text>	If you have been completing tasks continuously for an hour or more, please take a 15-minute break before starting again.</p>' + 
+		'<p class = center-block-text>Press <i>enter</i> to continue.</p>' + 
+		'</div>',
 	choices: ['Enter'],
-	post_trial_gap: 1000,
-	on_finish: function(){
-		feedback_text = 'Starting a test block.  Press <i>enter</i> to continue.'
-	}
+	post_trial_gap: 0,
+	on_finish: function() {
+		assessPerformance()
+		evalAttentionChecks()
+	} 
 };
 
 var feedback_text = '<div class = centerbox><p class = center-block-text>Press <i>enter</i> to begin practice.</p></div>'
@@ -409,11 +397,7 @@ var get_practiceNode = function() {
 		timeline: [feedback_block].concat(practiceTrials),
 		loop_function: function(data) {
 			
-			practiceCount += 1
-			practice_response_array = [];
-			for (i = 0; i < practice_trials.data.length; i++) {
-				practice_response_array.push(practice_trials.data[i].correct_response)
-			}		
+			practiceCount += 1		
 			
 			var sum_rt = 0
 			var sum_responses = 0
@@ -439,27 +423,24 @@ var get_practiceNode = function() {
 		
 			feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!</p>"
 
-			if (accuracy > accuracy_thresh){
-				feedback_text += '<p class = block-text>No feedback: done with this practice. Press <i>enter</i> to continue.</p>' 
+			if (accuracy > accuracy_thresh || practiceCount == practice_thresh){
+				feedback_text = '<div class = centerbox><p class = block-text>We will now start the test portion.</p>' +
+					'<p class = block-text>Keep your ' + response_keys.key_name[0] + ' on the ' + response_keys.key_description[0] + ' key and your ' + response_keys.key_name[1] + ' on the ' + response_keys.key_description[1] + ' key.</p>' + 
+					'<p class = block-text>Press <i>enter</i> to begin.</p></div>'
 				return false
-		
 			} else { // accuracy < accuracy_thresh
-				feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + prompt_text_list 
+				if (accuracy < accuracy_thresh) {
+					feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + prompt_text_list 
+				}
 				if (ave_rt > rt_thresh){
 					feedback_text += '<p class = block-text>You have been responding too slowly. Try to respond as quickly and accurately as possible.</p>'
 				}
 				if (missed_responses > missed_response_thresh){
 					feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
 				}
-				if (practiceCount == practice_thresh) {
-					feedback_text += '<p class = block-text>Done with this practice. Press <i>enter</i> to continue.</p>' 
-					feedback_text = '<div class = centerbox><p class = center-block-text>Press <i>enter</i> to begin practice.</p></div>'
-					return false
-				} else {
-					feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
-					practice_trials = jsPsych.randomization.repeat(test_stimuli, practice_len / 4, true);
-					return true
-				}
+				feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
+				practice_trials = jsPsych.randomization.repeat(test_stimuli, practice_len / 4, true);
+				return true
 			}
 		}
 	}
@@ -509,8 +490,6 @@ var get_testNode = function() {
 		timeline: [feedback_block].concat(testTrials),
 		loop_function: function(data) {
 			testCount += 1
-			test_trials = jsPsych.randomization.repeat(test_stimuli, numTrialsPerBlock / 4, true);
-		
 			var sum_rt = 0
 			var sum_responses = 0
 			var correct = 0
@@ -535,26 +514,27 @@ var get_testNode = function() {
 			var missed_responses = (total_trials - sum_responses) / total_trials
 			var ave_rt = sum_rt / sum_responses
 		
-			feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!<br>" +
-			"You have completed: "+testCount+" out of "+numTestBlocks+" blocks of trials.</p>"
-
-			if (accuracy < accuracy_thresh){
-				feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: <br>' + prompt_text_list
-			}
-			if (missed_responses > missed_response_thresh){
-				feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
-			}
-			if (ave_rt > rt_thresh){
-				feedback_text += '<p class = block-text>You have been responding too slowly. Try to respond as quickly and accurately as possible.</p>'
-			}
-			if (accuracy >= accuracy_thresh && missed_responses <= missed_response_thresh && ave_rt <= rt_thresh) {
-				feedback_text += '<p class = block-text>No feedback on this block.</p>'
-			}
 			if (testCount == numTestBlocks){
-				feedback_text += '</p><p class = block-text>Done with this test. Press <i>enter</i> to continue.<br> If you have been completing tasks continuously for an hour or more, please take a 15-minute break before starting again.'
+				feedback_text = '</p><p class = block-text>Done with this test. Press <i>enter</i> to continue.<br> If you have been completing tasks continuously for an hour or more, please take a 15-minute break before starting again.'
 				return false
 			} else {
+				feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!<br>" +
+					"You have completed: "+testCount+" out of "+numTestBlocks+" blocks of trials.</p>"
+
+				if (accuracy < accuracy_thresh){
+					feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: <br>' + prompt_text_list
+				}
+				if (missed_responses > missed_response_thresh){
+					feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
+				}
+				if (ave_rt > rt_thresh){
+					feedback_text += '<p class = block-text>You have been responding too slowly. Try to respond as quickly and accurately as possible.</p>'
+				}
+				if (accuracy >= accuracy_thresh && missed_responses <= missed_response_thresh && ave_rt <= rt_thresh) {
+					feedback_text += '<p class = block-text>No feedback on this block.</p>'
+				}
 				feedback_text += '<p class = block-text>Press <i>enter</i> to continue.</p>'
+				test_trials = jsPsych.randomization.repeat(test_stimuli, numTrialsPerBlock / 4, true);
 				return true
 			}
 		}
@@ -581,23 +561,12 @@ var flanker_rdoc_init = () => {
 	//globals
 	practice_trials = jsPsych.randomization.repeat(test_stimuli, practice_len / 4, true);
 	test_trials = jsPsych.randomization.repeat(test_stimuli, numTrialsPerBlock / 4, true);
-	
-	practice_response_array = [];
-	for (i = 0; i < practice_trials.data.length; i++) {
-		practice_response_array.push(practice_trials.data[i].correct_response)
-	}
-
-	test_response_array = [];
-	for (i = 0; i < test_trials.data.length; i++) {
-		test_response_array.push(test_trials.data[i].correct_response)
-	}
 
 	flanker_rdoc_experiment.push(fullscreen)
 
 	flanker_rdoc_experiment.push(instruction_node)
+	
 	flanker_rdoc_experiment.push(get_practiceNode())
-
-	flanker_rdoc_experiment.push(start_test_block)
 	flanker_rdoc_experiment.push(get_testNode())
 
 	flanker_rdoc_experiment.push(post_task_block)
