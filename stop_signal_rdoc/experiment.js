@@ -161,58 +161,52 @@ function getSSD(){
 }
 
 function getSSType(){
-	return stop_signal_conditions[0]
+	return stop_signal_condition
 }
 
+function getCorrectResponse(){
+	return correct_response
+}
 
 var appendData = function(data){
-	console.log(data)
-	var last =data.trials[0]
-	console.log(last)
 	current_trial+=1
 
 	if (exp_phase == "practice1"){
 		currBlock = practiceCount
 	} else if (exp_phase == "practice2"){
-		currBlock = practiceStopCount
+		currBlock = practiceCount
 	} else if (exp_phase == "test"){
 		currBlock = testCount
 	}
 	
-	if ((exp_phase == "practice1") || (exp_phase == "practice2") || (exp_phase == "test")){
-		jsPsych.data.get().addToLast({
-			stim: stimData.stim,
-			correct_response: correct_response,	
-			current_block: currBlock,
-			current_trial: current_trial,
-			stop_signal_condition: stimData.stop_signal_condition
-		})
-		
-		var correct_current = 0
-		if (last.response == correct_response){
-			correct_trial = 1
-		}
-		jsPsych.data.get().addToLast({
-			correct_trial: correct_current
-		})
+	data.stim = stimData.stim
+	data.correct_response = correct_response
+	data.current_block = currBlock
+	data.current_trial = current_trial
+	data.stop_signal_condition = stimData.stop_signal_condition
+	
+	var correct_current = 0
+	if (data.response == data.correct_response){
+		correct_trial = 1
 	}
+	data.correct_trial = correct_current
 	
 	if ((exp_phase == "test") || (exp_phase == "practice2")){	
 
-		if (last.stop_signal_condition == 'stop') {
-			if ((last.response == null) && (SSD < maxSSD)) {
-				jsPsych.data.get().addToLast({stop_acc: 1})
+		if (data.stop_signal_condition == 'stop') {
+			if ((data.response == null) && (SSD < maxSSD)) {
+				data.stop_acc = 1
 				SSD+=50
-			} else if ((last.response != null) && (SSD > minSSD)) {
-				jsPsych.data.get().addToLast({stop_acc: 0})
+			} else if ((data.response != null) && (SSD > minSSD)) {
+				data.stop_acc = 0
 				SSD-=50
 			}
 
-		} else if (last.stop_signal_condition == 'go') {
-			if (last.response == last.correct_response) {
-				jsPsych.data.get().addToLast({go_acc: 1})
+		} else if (data.stop_signal_condition == 'go') {
+			if (data.response == data.correct_response) {
+				data.go_acc = 1
 			} else {
-				jsPsych.data.get().addToLast({go_acc: 0})
+				data.go_acc = 0
 			}
 		}
 	}
@@ -233,25 +227,22 @@ var numTestBlocks = 3
 var exp_len = numTrialsPerBlock * numTestBlocks
 
 var practice_thresh = 3 // max number of times to repeat practice
-var accuracy_thresh = 0.80
-var missed_thresh = 0.10
+var accuracy_thresh = 0.75
+var missed_response_thresh = 0.10
+var rt_thresh = 1000;
 
 var SSD = 350
 var maxSSD = 1000
 var minSSD = 0 
-var current_trial = 0
-var correct_response = null
-var stims = null
-var stimData = null
-var stop_signal_condition = null
 
-var rt_thresh = 1000;
-var missed_response_thresh = 0.10;
-var accuracy_thresh = 0.75;
+current_trial = 0
+correct_response = null
+stimData = null
+stop_signal_condition = null
+
 
 var maxStopCorrect = 0.70
 var minStopCorrect = 0.30
-
 var maxStopCorrectPractice = 1
 var minStopCorrectPractice = 0
 
@@ -409,7 +400,6 @@ var feedback_block = {
 	choices: ['Enter'],
 	stimulus: getFeedback,
 	post_trial_gap: 0,
-	is_html: true,
 	trial_duration: 18000,
 	response_ends_trial: true, 
 };
@@ -465,20 +455,22 @@ for (i = 0; i < practice_len; i++) {
 		type: jsPoldracklabStopSignal,
 		stimulus: getStim,
 		SS_stimulus: getStopStim,
-		SS_trial_type: 'stop',
+		SS_trial_type: getSSType,
 		data: {
 			trial_id: "practice_trial",
 			exp_stage: 'practice'
 		},
 		choices: choices,
-		correct_choice: correct_response,
+		correct_choice: getCorrectResponse,
 		stimulus_duration: 1000, //1000
 		trial_duration: 2000, //2000
 		response_ends_trial: false,
 		SSD: getSSD,
 		SS_duration: 500, //500
 		post_trial_gap: 0,
-		on_finish: appendData,
+		on_finish: function(data) {
+			appendData(data)
+		},
 		prompt: prompt_text
 	}
 	
@@ -490,11 +482,11 @@ for (i = 0; i < practice_len; i++) {
 		},
 		choices: ['NO_KEYS'],
 		stimulus: getCategorizeFeedback,
-		is_html: true,
 		post_trial_gap: 0,
 		stimulus_duration: 500, //500
 		trial_duration: 500, //500
 		response_ends_trial: false, 
+		prompt: prompt_text
 	};
 
 	practiceStopTrials.push(prompt_fixation_block, practice_block, practice_feedback_block)
@@ -544,7 +536,6 @@ var practiceStopNode = {
 		}
 		
 		var average_rt = sum_go_rt / num_go_responses;
-		console.log(average_rt)
 		var missed_responses = (go_length - num_go_responses) / go_length
 		var aveShapeRespondCorrect = sumGo_correct / go_length 
 		var stop_signal_respond = num_stop_responses / stop_length
@@ -609,7 +600,9 @@ for (i = 0; i < numTrialsPerBlock; i++) {
 		SSD: getSSD,
 		SS_duration: 500, //500
 		post_trial_gap: 0,
-		on_finish: appendData
+		on_finish: function(data) {
+			appendData(data)
+		},
 	}
 	testTrials.push(fixation_block, test_block)
 }
@@ -705,13 +698,12 @@ var exit_fullscreen = {
 var stop_signal_rdoc_experiment = []
 
 var stop_signal_rdoc_init = () => {
-	// document.body.style.background = 'gray' //// CHANGE THIS
+	document.body.style.background = 'gray' //// CHANGE THIS
 
 	jsPsych.pluginAPI.preloadImages(images);
 
 	// globals
 	stims = createTrialTypes(practice_len)
-	stop_signal_rdoc_experiment.push(testNode);
 
 	stop_signal_rdoc_experiment.push(fullscreen)
 
