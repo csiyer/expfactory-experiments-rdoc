@@ -165,8 +165,10 @@ function getSSType(){
 }
 
 
-var appendData = function(){
-	var last = jsPsych.data.get().last(1).trials[0]
+var appendData = function(data){
+	console.log(data)
+	var last =data.trials[0]
+	console.log(last)
 	current_trial+=1
 
 	if (exp_phase == "practice1"){

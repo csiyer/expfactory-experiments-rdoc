@@ -94,6 +94,7 @@ var getFeedback = function() {
 /* ************************************ */
 /* Define experimental variables */
 /* ************************************ */
+
 // generic task variables
 var run_attention_checks = false
 var attention_check_thresh = 0.65
@@ -103,105 +104,101 @@ var rt_thresh = 1000
 var missed_response_thresh = 0.10
 var practice_thresh = 3 // 3 blocks max
 
+var numPracticeTrials = 12 
 var numTestBlocks = 3
-var numTrialsPerBlock = 48
+var numTrialsPerBlock = 48 // should be multiple of 24
 
 // task specific variables
 var possible_responses = [['index finger', ',', 'comma key (,)'], ['middle finger', '.', 'period key (.)']] // [instruct_name, key_code, key_description]
 var choices = [possible_responses[0][1], possible_responses[1][1]]
 
+var trial_proportions = ['valid', 'valid', 'valid',  'invalid']
+
 var current_trial = 0
 var exp_stage = 'practice'
 
-/* set up stim: location (2) * cue (4) * direction (2) * condition (3) */
-var locations = ['up', 'down']
-var cues = ['nocue', 'center', 'double', 'spatial']
+var fixation = '<div class = centerbox><div class = fixation style="font-size:100px">+</div></div>'
 
-// images to preload
-var path = '/static/experiments/spatial_cueing_rdoc/images/'
-var images = [path + 'right_arrow.png', path + 'left_arrow.png', path + 'no_arrow.png']
-
-var test_stimuli = []
-for (let l = 0; l < locations.length; l++) {
-	var loc = locations[l]
-	for (let ci = 0; ci < cues.length; ci++) {
-		var c = cues[ci]
-		stims = [{
-			stimulus: '<div class = centerbox><div class = ANT_text>+</div></div><div class = ANT_' + loc +
-				'><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[1] + '></img><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[2] + '></img></div>',
-			data: {
-				correct_response: choices[0],
-				flanker_middle_direction: 'left',
-				flanker_type: 'neutral',
-				flanker_location: loc,
-				cue: c, 
-				trial_id: 'stim'
-			}
-		}, {
-			stimulus: '<div class = centerbox><div class = ANT_text>+</div></div><div class = ANT_' + loc +
-				'><img class = ANT_img src = ' + images[1] + '></img><img class = ANT_img src = ' + images[1] + '></img><img class = ANT_img src = ' + images[1] + '></img><img class = ANT_img src = ' + images[1] + '></img><img class = ANT_img src = ' + images[1] + '></img></div>',
-			data: {
-				correct_response: choices[0],
-				flanker_middle_direction: 'left',
-				flanker_type: 'congruent',
-				flanker_location: loc,
-				cue: c, 
-				trial_id: 'stim'
-			}
-		}, {
-			stimulus: '<div class = centerbox><div class = ANT_text>+</div></div><div class = ANT_' + loc +
-				'><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[1] + '></img><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[0] + '></img></div>',
-			data: {
-				correct_response: choices[0],
-				flanker_middle_direction: 'left',
-				flanker_type: 'incongruent',
-				flanker_location: loc,
-				cue: c, 
-				trial_id: 'stim'
-			}
-		}, {
-			stimulus: '<div class = centerbox><div class = ANT_text>+</div></div><div class = ANT_' + loc +
-				'><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[2] + '></img></div>',
-			data: {
-				correct_response: choices[1],
-				flanker_middle_direction: 'right',
-				flanker_type: 'neutral',
-				flanker_location: loc,
-				cue: c, 
-				trial_id: 'stim'
-			}
-		}, {
-			stimulus: '<div class = centerbox><div class = ANT_text>+</div></div><div class = ANT_' + loc +
-				'><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[0] + '></img></div></div>',
-			data: {
-				correct_response: choices[1],
-				flanker_middle_direction: 'right',
-				flanker_type: 'congruent',
-				flanker_location: loc,
-				cue: c, 
-				trial_id: 'stim'
-			}
-		}, {
-			stimulus: '<div class = centerbox><div class = ANT_text>+</div></div><div class = ANT_' + loc +
-				'><img class = ANT_img src = ' + images[1] + '></img><img class = ANT_img src = ' + images[1] + '></img><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[1] + '></img><img class = ANT_img src = ' + images[1] + '></img></div>',
-			data: {
-				correct_response: choices[1],
-				flanker_middle_direction: 'right',
-				flanker_type: 'incongruent',
-				flanker_location: loc,
-				cue: c, 
-				trial_id: 'stim'
-			}
-		}]
-		test_stimuli = test_stimuli.concat(stims)
-	}
+var images = {
+	left: {
+		box: '<div class = bigbox><div id = left_box></div></div>',
+		bold: '<div class = bigbox><div id = left_box style="border-width:15px"></div></div>',
+		star: '<div class = bigbox><div id = left_box><div class=center-text>*</div></div></div>',
+	},
+	right: {
+		box: '<div class = bigbox><div id = right_box></div></div>',
+		bold: '<div class = bigbox><div id = right_box style="border-width:15px"></div></div>',
+		star: '<div class = bigbox><div id = right_box><div class=center-text>*</div></div></div>',
+	},
 }
 
+var stimuli = []
+// making 24 stimuli: 4 nocue left, 4 nocue right; 4 doublecue left, 4 doublecue right; 3 valid left, 1 invalid left, 3 valid right, 1 invalid right
+for (let i = 0; i < 2; i++) {
+	var loc = ['left', 'right'][i]
+	var noloc = ['left', 'right'].filter(value => value != loc)[0]
+	// for this side, add 4 nocue, 4 double cue, 3 valid, 1 invalid
+	nocue_trials = Array(4).fill(
+		{
+			stimulus: images[loc].star + images[noloc].box + fixation,
+			cue_stimulus: images[loc].box + images[noloc].box + fixation,
+			data: {
+				cue_type: 'nocue',
+				correct_response: choices[i]
+			}
+		}
+	) 
+	doublecue_trials = Array(4).fill(
+		{
+			stimulus: images[loc].star + images[noloc].box + fixation,
+			cue_stimulus: images[loc].bold + images[noloc].bold + fixation,
+			data: {
+				cue_type: 'doublecue',
+				correct_response: choices[i]
+			}
+		}
+	)
+	valid_trials = Array(3).fill(
+		{
+			stimulus: images[loc].star + images[noloc].box + fixation,
+			cue_stimulus: images[loc].bold + images[noloc].box + fixation,
+			data: {
+				cue_type: 'valid',
+				correct_response: choices[i]
+			}
+		}
+	)
+	invalid_trial = [
+		{
+			stimulus: images[loc].star + images[noloc].box + fixation,
+			cue_stimulus: images[loc].box + images[noloc].bold + fixation,
+			data: {
+				cue_type: 'invalid',
+				correct_response: choices[i]
+			}
+		}
+	]
+	stimuli = stimuli.concat(nocue_trials, doublecue_trials, valid_trials, invalid_trial)
+}
+
+var OLD_DELTE = {
+	stimulus: '<div class = centerbox><div class = ANT_text>+</div></div><div class = ANT_' + loc +
+		'><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[2] + '></img></div>',
+	data: {
+		correct_response: choices[1],
+		flanker_middle_direction: 'right',
+		flanker_type: 'neutral',
+		flanker_location: loc,
+		cue: 'c', 
+		trial_id: 'stim'
+	}
+}
 
 var prompt_text = '<div class = prompt_box>'+
             '<p class = center-block-text style = "font-size:16px; line-height:80%%;">Star in left box: ' + possible_responses[0][0]+'</li>' +
             '<p class = center-block-text style = "font-size:16px; line-height:80%%;">Star in right box: ' + possible_responses[1][0] +'</li>' +
           '</div>'
+
 var speed_reminder = '<p class = block-text>Try to respond as quickly and accurately as possible.</p>'
 
 
@@ -284,8 +281,9 @@ var instructions_block = {
 	pages: [
 	  '<div class = centerbox>'+
 		'<p class=block-text>Place your <b>' + possible_responses[0][0] + '</b> on the <b>' + possible_responses[0][2] + '</b> and your <b>' + possible_responses[1][0] + '</b> on the <b>' + possible_responses[1][2] + '</b> </p>' + 
-		'<p class = block-text>In this task, you will see two boxes on either side of the screen. On each trial, a star will appear in one of them.</p>' +
-		'<p class = block-text>Your task is to press your <b>' + possible_responses[0][0] + '</b> if the star appears in the <b>left box</b>, and your <b>' + possible_responses[1][0] + '</b> if the star appears in the <b>right box</b>.</p>' +
+		'<p class = block-text>In this task, you should focus your gaze on the \'+\' sign in the center of the screen throughout. </p>' +
+		'<p class = block-text>There will be two boxes on either side of the screen. On each trial, a star will appear in one of them.</p>'+ 
+		'<p class = block-text>While focusing on the central \'+\', your task is to press your <b>' + possible_responses[0][0] + '</b> if the star appears in the <b>left box</b>, and your <b>' + possible_responses[1][0] + '</b> if the star appears in the <b>right box</b>.</p>' +
 		'<p class = block-text>On some trials, one or both of the boxes will be highlighted before the star appears. No matter which box(es) are highlighted, it is important that you quickly and accurately indicate where the star appears.</p>' +
 	  '</div>',
 	  '<div class = centerbox><p class = block-text>We\'ll start with a practice round. During practice, you will receive feedback and a reminder of the rules. '+
@@ -339,11 +337,11 @@ var practice_feedback_block = {
 	stimulus: function() {
 	  var last = jsPsych.data.get().last(1).values()[0]
 	  if (last.response == null) {
-		return '<div class = fb_box><div class = center-text><font size =20>Respond Faster!</font></div></div>'
+		return '<div class = fb_box><div class = center-text><font size =20>Respond Faster!</font></div></div>' + images.left.box + images.right.box + fixation
 	  } else if (last.correct_trial == 1) {
-		return '<div class = fb_box><div class = center-text><font size =20>Correct!</font></div></div>'
+		return '<div class = fb_box><div class = center-text><font size =20>Correct!</font></div></div>' + images.left.box + images.right.box + fixation
 	  } else {
-		return '<div class = fb_box><div class = center-text><font size =20>Incorrect</font></div></div>'
+		return '<div class = fb_box><div class = center-text><font size =20>Incorrect</font></div></div>' + images.left.box + images.right.box + fixation
 	  }
 	},
 	data: {
@@ -372,73 +370,51 @@ var feedback_block = {
 
 
 /***** TRIAL BLOCKS *****/
-
-//initialize
-var first_fixation_gap = Math.floor(Math.random() * 1200) + 400;
-var last_fixation_gap = Math.floor(Math.random() * 1200) + 400;
-function getFixationBlock(which='middle', prompt='') {
-	var timing = 400 //ms
-	if (which == 'first') {
-		timing = first_fixation_gap
-	} else if (which == 'last') {
-		timing = last_fixation_gap
-	} 
+function getFixationBlock(length, prompt='') {
 	var fixation_block = {
 		type: jsPsychHtmlKeyboardResponse,
-		stimulus: '<div class = centerbox><div class = fixation>+</div></div>',
+		stimulus: images.left.box + images.right.box + fixation,
 		choices: ['NO_KEYS'],
 		data: {
 			trial_id: 'fixation',
 			exp_stage: exp_stage
 		},
 		post_trial_gap: 0,
-		stimulus_duration: timing,
-		trial_duration: timing,
+		stimulus_duration: length,
+		trial_duration: length,
 		prompt: prompt
 	}
 	return fixation_block
 }
 
-
-function getCueBlock(cuetype, cue_location = 'Error', prompt='') {
+function getCueBlock(stim, prompt='') {
 	var cue_block = {
 		type: jsPsychHtmlKeyboardResponse,
-		stimulus: function () {
-			if (cuetype == 'nocue') {
-				return '<div class = centerbox><div class = ANT_text>+</div></div>'
-			} else if (cuetype == 'center') {
-				return '<div class = centerbox><div class = ANT_centercue_text>*</div></div>'
-			} else if (cuetype == 'double') {
-				'<div class = centerbox><div class = ANT_text>+</div></div><div class = ANT_down><div class = ANT_text>*</div></div><div class = ANT_up><div class = ANT_text>*</div><div></div>'
-			} else if (cuetype == 'spatial') {
-				return '<div class = centerbox><div class = ANT_text>+</div></div><div class = centerbox><div class = ANT_' + cue_location +
-				'><div class = ANT_text>*</p></div></div>'
-			}
-		},
+		stimulus: stim.cue_stimulus,
 		choices: ['NO_KEYS'], 
 		data: {
-			trial_id: cuetype,
+			trial_id: stim.data.cue_type,
 			exp_stage: exp_stage
 		},
 		post_trial_gap: 0,
-		stimulus_duration: 100,
-		trial_duration: 100,
+		stimulus_duration: 500,
+		trial_duration: 500,
 		prompt: prompt
 	}
 	return cue_block
 }
 
-function getTrialBlock(trial_stim, trial_data, prompt='') {
+function getTrialBlock(stim, prompt='') {
 	var trial = {
 		type: jsPsychHtmlKeyboardResponse,
-		stimulus: trial_stim,
+		stimulus: stim.stimulus,
 		choices: choices,
-		data: Object.assign({}, trial_data, {
+		data: Object.assign({}, stim.data, {
 			trial_id: 'stim',
 			exp_stage: exp_stage
 		}),
-		trial_duration: 1700,
-		stimulus_duration: 1700,
+		trial_duration: 1000,
+		stimulus_duration: 1000,
 		response_ends_trial: false,
 		post_trial_gap: 0,
 		on_finish: appendData,
@@ -447,7 +423,10 @@ function getTrialBlock(trial_stim, trial_data, prompt='') {
 	return trial
 }
 
-
+// initialize
+var first_fixation_gap = 1000
+var second_fixation_gap = Math.floor(Math.random() * 1200) + 400; //CTI
+var last_fixation_gap = 400
 var get_practiceNode = function() {
 	var practiceTrials = []
 	var trial_num = 0
@@ -455,13 +434,13 @@ var get_practiceNode = function() {
 
 		trial_num += 1
 		practice_stims[i].data.trial_num = trial_num
-		first_fixation_gap = Math.floor(Math.random() * 1200) + 400
+		second_fixation_gap = Math.floor(Math.random() * 1200) + 400 //CTI
 
 		practiceTrials.push(
-			getFixationBlock(which='first', prompt=prompt_text),
-			getCueBlock(practice_stims[i].data.cue, practice_stims[i].data.flanker_location, prompt=prompt_text),
-			getFixationBlock(which='middle', prompt=prompt_text),
-			getTrialBlock(practice_stims[i].stimulus, practice_stims[i].data, prompt=prompt_text),
+			getFixationBlock(first_fixation_gap, prompt=prompt_text),
+			getCueBlock(practice_stims[i], prompt=prompt_text),
+			getFixationBlock(second_fixation_gap, prompt=prompt_text),
+			getTrialBlock(practice_stims[i], prompt=prompt_text),
 			practice_feedback_block,
 			// getFixationBlock(which='last', practice=true) //idrk what this is for
 		)
@@ -497,10 +476,10 @@ var get_practiceNode = function() {
 		
 			if (accuracy > accuracy_thresh || practiceCount == practice_thresh){
 				feedback_text = '<div class = centerbox><p class = center-block-text>We will now start the test portion.</p>' + 
-				'<p class = block-text>Keep your ' + possible_responses[0][0] + ' on the ' + possible_responses[0][2] + ' your ' + possible_responses[1][0] + ' on the ' +  possible_responses[1][2] + ' and your ' + possible_responses[2][0] + ' on the ' +  possible_responses[0][2] + '</p>' + 
+				'<p class = block-text>Keep your gaze on the central \'+\', your ' + possible_responses[0][0] + ' on the ' + possible_responses[0][2] + ' your ' + possible_responses[1][0] + ' on the ' +  possible_responses[1][2] + ' and your ' + possible_responses[2][0] + ' on the ' +  possible_responses[0][2] + '</p>' + 
 				'<p class = center-block-text>Press <i>enter</i> to continue.</p></div>'
 				exp_stage = 'test'
-				block_stims = jsPsych.randomization.repeat(test_stimuli, numTrialsPerBlock / test_stimuli.length)
+				block_stims = jsPsych.randomization.repeat(stimuli, numTrialsPerBlock / stimuli.length) 
 				return false
 
 			} else { 
@@ -515,10 +494,7 @@ var get_practiceNode = function() {
 					feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
 				}
 				feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
-				practice_stims = jsPsych.randomization.repeat(
-					test_stimuli.slice(0, 12).concat(test_stimuli.slice(
-					18, 21)).concat(test_stimuli.slice(36, 45)), 
-					1, true);
+				practice_stims = jsPsych.randomization.repeat(stimuli, 1).slice(0, numPracticeTrials)
 				return true
 			}
 		}
@@ -533,14 +509,14 @@ var get_testNode = function() {
 	for (i = 0; i < block_stims.length; i++) {
 		trial_num += 1
 		block_stims[i].data.trial_num = trial_num
-		first_fixation_gap = Math.floor(Math.random() * 1200) + 400
+		second_fixation_gap = Math.floor(Math.random() * 1200) + 400 //CTI
 
 		testTrials.push(
-			getFixationBlock(which='first', practice=true),
-			getCueBlock(block_stims[i].data.cue, block_stims[i].data.flanker_location),
-			getFixationBlock(which='middle', practice=true),
-			getTrialBlock(block_stims[i].stimulus, block_stims[i].data),
-			// getFixationBlock(which='last', practice=true) //idrk what this is for
+			getFixationBlock(first_fixation_gap),
+			getCueBlock(block_stims[i]),
+			getFixationBlock(second_fixation_gap),
+			getTrialBlock(block_stims[i]),
+			getFixationBlock(last_fixation_gap, practice=true) //idrk what this is for
 		)
 	}
 	// testTrials.push(attention_node)
@@ -593,7 +569,7 @@ var get_testNode = function() {
 					feedback_text += '<p class = block-text>No feedback on this block.</p>'
 				}
 				feedback_text += '<p class = block-text>Press <i>enter</i> to continue.</p>'
-				block_stims = jsPsych.randomization.repeat(test_stimuli, numTrialsPerBlock / test_stimuli.length)
+				block_stims = jsPsych.randomization.repeat(stimuli, numTrialsPerBlock / stimuli.length) 
 				return true
 			}
 		}
@@ -613,16 +589,10 @@ var exit_fullscreen = {
 var spatial_cueing_rdoc_experiment = [];
 spatial_cueing_rdoc_init = () => {
 	document.body.style.background = 'gray' //// CHANGE THIS
-	
-	jsPsych.pluginAPI.preloadImages(images)
 
 	/* 24 practice trials. Included all nocue up trials, center cue up trials, double cue down trials, and 6 spatial trials (3 up, 3 down) */
-	practice_stims = jsPsych.randomization.repeat(
-		test_stimuli.slice(0, 12).concat(test_stimuli.slice(
-		18, 21)).concat(test_stimuli.slice(36, 45)), 
-		1);
-	block_stims = jsPsych.randomization.repeat(test_stimuli, numTrialsPerBlock / test_stimuli.length, true) // jsPsych.randomization.repeat($.extend(true, [], test_stimuli), 1, true)
-
+	practice_stims = jsPsych.randomization.repeat(stimuli, 1).slice(0, numPracticeTrials)
+	block_stims = jsPsych.randomization.repeat(stimuli, numTrialsPerBlock / stimuli.length) // jsPsych.randomization.repeat($.extend(true, [], test_stimuli), 1, true)
 	spatial_cueing_rdoc_experiment.push(fullscreen)
 	spatial_cueing_rdoc_experiment.push(instruction_node);
 

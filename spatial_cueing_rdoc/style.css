@@ -122,51 +122,42 @@ img.center {
 /*******************************************************/
 /************       Posner CSS Styles        ***********/
 /*******************************************************/
-/* copied from ANT */
 
-.ANT_up {
-  height: 7vw;
-  width: 25vw;
+.gng_number {
+  width: 5vw;
+  height: 5vw;
   position:absolute;
   top:50%;
   left:50%;
-  margin-right:-50%;
-  transform: translate(-50%,-300%);
+  margin-right:0%;
+  transform: translate(-50%,-50%);
+  background-color: none;
 }
 
-.ANT_down {
-  height: 7vw;
+#left_box {
   width: 25vw;
-  position:absolute;
+	height: 25vw;
+	background: none;
+	position: absolute;
+	border-style: solid;
+  border-width: 5px;
+  border-color: black;
   top:50%;
-  left:50%;
-  margin-right:-50%;
-  transform: translate(-50%,200%);
+  left:25%;
+  margin-right:-25%;
+  transform: translate(-50%,-50%);
 }
 
-.ANT_text {
-	text-align: center;
-	font-size: 60px;
-  position: relative;
-  top: 50%; 
-  transform: translateY(-50%);
-  -webkit-transform: translateY(-50%);
-}
-
-.ANT_centercue_text {
-	text-align: center;
-	font-size: 60px;
-	position: relative;
-  top: 50%; 
-  transform: translateY(-40%);
-  -webkit-transform: translateY(-40%);
-}
-
-.responded {
-  visibility: hidden;
-}
-
-.ANT_img {
-  max-width: 16%;
-  padding: 0px 4% 0px 0px;
+#right_box {
+  width: 25vw;
+	height: 25vw;
+	background: none;
+	position: absolute;
+	border-style: solid;
+  border-width: 5px;
+  border-color: black;
+  top:50%;
+  left:75%;
+  margin-right:-75%;
+  transform: translate(-50%,-50%);
 }
