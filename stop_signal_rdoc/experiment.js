@@ -145,7 +145,7 @@ var getStim = function(){
 		} 
 	}
 	stim = {
-		image: '<div class = bigbox><div class = centerbox><div class = gng_number><div class = cue-text>' + preFileType  + shape + postFileType + '</div>',
+		image: '<div class = centerbox><div class = cue-text>' + preFileType  + shape + postFileType + '</div></div>',
 		data: { 
 			stim: shape,
 			stop_signal_condition: stop_signal_condition,
