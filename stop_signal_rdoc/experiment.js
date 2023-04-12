@@ -153,7 +153,7 @@ var getStim = function(){
 			stim: shape,
 			stop_signal_condition: stop_signal_condition,
 			correct_response: correct_response
-			}
+    }
 	}
 	stimData = stim.data
 	return stim.image
@@ -397,12 +397,8 @@ var feedback_block = {
 	choices: ['Enter'],
 	stimulus: getFeedback,
 	post_trial_gap: 0,
-<<<<<<< HEAD
 	is_html: true,
 	trial_duration: 18000,
-=======
-	trial_duration: 180000,
->>>>>>> 5b2d7682a2480b312fe4fc87c41284205be8cb34
 	response_ends_trial: true, 
 };
 
@@ -481,27 +477,19 @@ for (i = 0; i < practice_len; i++) {
 		}
 	}
 	
-<<<<<<< HEAD
-	var categorize_block = {
-    type: jsPsychHtmlKeyboardResponse,
-=======
 	var practice_feedback_block = {
-		type: jsPsychHtmlKeyboardResposne,
->>>>>>> 5b2d7682a2480b312fe4fc87c41284205be8cb34
+		type: jsPsychHtmlKeyboardResponse,
 		data: {
 			trial_id: "practice-stop-feedback",
 			exp_stage: 'practice'
 		},
 		choices: ['NO_KEYS'],
 		stimulus: getCategorizeFeedback,
-<<<<<<< HEAD
 		timing_post_trial: 0,
 		is_html: true,
 		timing_stim: 500, //500
-=======
 		post_trial_gap: 0,
 		stimulus_duration: 500, //500
->>>>>>> 5b2d7682a2480b312fe4fc87c41284205be8cb34
 		trial_duration: 500, //500
 		response_ends_trial: false, 
 	};
@@ -714,12 +702,9 @@ var stop_signal_rdoc_init = () => {
 
 	// globals
 	stims = createTrialTypes(numTrialsPerBlock)
-<<<<<<< HEAD
-=======
 
 	stop_signal_rdoc_experiment.push(fullscreen)
 
->>>>>>> 5b2d7682a2480b312fe4fc87c41284205be8cb34
 	stop_signal_rdoc_experiment.push(instruction_node)
 	stop_signal_rdoc_experiment.push(practiceStopNode)
 	stop_signal_rdoc_experiment.push(feedback_block);
@@ -730,10 +715,5 @@ var stop_signal_rdoc_init = () => {
 
 	stop_signal_rdoc_experiment.push(post_task_block);
 	stop_signal_rdoc_experiment.push(end_block);
-<<<<<<< HEAD
-}
-=======
-
 	stop_signal_rdoc_experiment.push(exit_fullscreen)
 }
->>>>>>> 5b2d7682a2480b312fe4fc87c41284205be8cb34
