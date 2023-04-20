@@ -104,7 +104,7 @@ var rt_thresh = 1000
 var missed_response_thresh = 0.10
 var practice_thresh = 3 // 3 blocks max
 
-var numPracticeTrials = 12 
+var numPracticeTrials = 4 // 12 
 var numTestBlocks = 3
 var numTrialsPerBlock = 48 // should be multiple of 24
 
@@ -116,6 +116,7 @@ var trial_proportions = ['valid', 'valid', 'valid',  'invalid']
 
 var current_trial = 0
 var exp_stage = 'practice'
+var currStim = ''
 
 var fixation = '<div class = centerbox><div class = fixation style="font-size:100px">+</div></div>'
 
@@ -179,19 +180,6 @@ for (let i = 0; i < 2; i++) {
 		}
 	]
 	stimuli = stimuli.concat(nocue_trials, doublecue_trials, valid_trials, invalid_trial)
-}
-
-var OLD_DELTE = {
-	stimulus: '<div class = centerbox><div class = ANT_text>+</div></div><div class = ANT_' + loc +
-		'><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[0] + '></img><img class = ANT_img src = ' + images[2] + '></img><img class = ANT_img src = ' + images[2] + '></img></div>',
-	data: {
-		correct_response: choices[1],
-		flanker_middle_direction: 'right',
-		flanker_type: 'neutral',
-		flanker_location: loc,
-		cue: 'c', 
-		trial_id: 'stim'
-	}
 }
 
 var prompt_text = '<div class = prompt_box>'+
@@ -369,213 +357,282 @@ var feedback_block = {
 };
 
 
-/***** TRIAL BLOCKS *****/
-function getFixationBlock(length, prompt='') {
-	var fixation_block = {
-		type: jsPsychHtmlKeyboardResponse,
-		stimulus: images.left.box + images.right.box + fixation,
-		choices: ['NO_KEYS'],
-		data: {
-			trial_id: 'fixation',
-			exp_stage: exp_stage
-		},
-		post_trial_gap: 0,
-		stimulus_duration: length,
-		trial_duration: length,
-		prompt: prompt
-	}
-	return fixation_block
+var getCue = function(){
+	currStim = block_stims.pop()
+	currStim.data.trial_num = trial_num
+	return currStim.cue_stimulus
 }
 
-function getCueBlock(stim, prompt='') {
-	var cue_block = {
-		type: jsPsychHtmlKeyboardResponse,
-		stimulus: stim.cue_stimulus,
-		choices: ['NO_KEYS'], 
-		data: {
-			trial_id: stim.data.cue_type,
-			exp_stage: exp_stage
-		},
-		post_trial_gap: 0,
-		stimulus_duration: 500,
-		trial_duration: 500,
-		prompt: prompt
-	}
-	return cue_block
+var getStim = function() {
+ 	return currStim.stimulus
 }
 
-function getTrialBlock(stim, prompt='') {
-	var trial = {
-		type: jsPsychHtmlKeyboardResponse,
-		stimulus: stim.stimulus,
-		choices: choices,
-		data: Object.assign({}, stim.data, {
-			trial_id: 'stim',
-			exp_stage: exp_stage
-		}),
-		trial_duration: 1000,
-		stimulus_duration: 1000,
-		response_ends_trial: false,
-		post_trial_gap: 0,
-		on_finish: appendData,
-		prompt: prompt
-	}
-	return trial
+var getStimData = function() {
+	return currStim.data
 }
+
 
 // initialize
 var first_fixation_gap = 1000
 var second_fixation_gap = Math.floor(Math.random() * 1200) + 400; //CTI
 var last_fixation_gap = 400
-var get_practiceNode = function() {
-	var practiceTrials = []
-	var trial_num = 0
-	for (let i = 0; i < practice_stims.length; i++) {
 
-		trial_num += 1
-		practice_stims[i].data.trial_num = trial_num
-		second_fixation_gap = Math.floor(Math.random() * 1200) + 400 //CTI
+var practiceTrials = []
+var trial_num = 0
+for (let i = 0; i < numPracticeTrials; i++) {
 
-		practiceTrials.push(
-			getFixationBlock(first_fixation_gap, prompt=prompt_text),
-			getCueBlock(practice_stims[i], prompt=prompt_text),
-			getFixationBlock(second_fixation_gap, prompt=prompt_text),
-			getTrialBlock(practice_stims[i], prompt=prompt_text),
-			practice_feedback_block,
-			// getFixationBlock(which='last', practice=true) //idrk what this is for
-		)
+	trial_num += 1
+	var first_fixation_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: images.left.box + images.right.box + fixation,
+		choices: ['NO_KEYS'],
+		data: {
+			trial_id: 'fixation',
+			exp_stage: 'practice'
+		},
+		post_trial_gap: 0,
+		stimulus_duration: first_fixation_gap,
+		trial_duration: first_fixation_gap,
+		prompt: prompt_text
 	}
+	var cue_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: getCue, 
+		choices: ['NO_KEYS'], 
+		data: function () {
+			return {
+				trial_id: getStimData().cue_type,
+				exp_stage: 'practice'
+			}
+		},
+		post_trial_gap: 0,
+		stimulus_duration: 500,
+		trial_duration: 500,
+		prompt: prompt_text
+	}
+	var second_fixation_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: images.left.box + images.right.box + fixation,
+		choices: ['NO_KEYS'],
+		data: {
+			trial_id: 'fixation',
+			exp_stage: 'practice'
+		},
+		post_trial_gap: 0,
+		stimulus_duration: second_fixation_gap,
+		trial_duration: second_fixation_gap,
+		prompt: prompt_text,
+		on_finish: function() {second_fixation_gap = Math.floor(Math.random() * 1200) + 400}
+	}
+	var trial_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: getStim,
+		choices: choices,
+		data: function() {
+			return Object.assign({}, getStimData(), {
+				trial_id: 'stim',
+				exp_stage: 'practice'})
+		},
+		trial_duration: 1000,
+		stimulus_duration: 1000,
+		response_ends_trial: false,
+		post_trial_gap: 0,
+		on_finish: appendData,
+		prompt: prompt_text
+	}
+	practiceTrials.push(first_fixation_block, cue_block, second_fixation_block, trial_block, practice_feedback_block)
+}
 
-	// loop based on criteria
-	var practiceCount = 0
-	var practiceNode = {
-		timeline: [feedback_block].concat(practiceTrials),
-		loop_function: function(data) {
-			practiceCount += 1
-			
-			var sum_rt = 0
-			var sum_responses = 0
-			var correct = 0
-			var total_trials = 0
+// loop based on criteria
+var practiceCount = 0
+var practiceNode = {
+	timeline: [feedback_block].concat(practiceTrials),
+	loop_function: function(data) {
+		practiceCount += 1
 		
-			for (var i = 0; i < data.trials.length; i++){
-				if (data.trials[i].trial_id == 'stim'){
-					total_trials+=1
-					if (data.trials[i].rt != null){
-						sum_rt += data.trials[i].rt
-						sum_responses += 1
-						if (data.trials[i].correct_trial == 1){
-							correct += 1
-						}
-					}	
+		var sum_rt = 0
+		var sum_responses = 0
+		var correct = 0
+		var total_trials = 0
+	
+		for (var i = 0; i < data.trials.length; i++){
+			if (data.trials[i].trial_id == 'stim'){
+				total_trials+=1
+				if (data.trials[i].rt != null){
+					sum_rt += data.trials[i].rt
+					sum_responses += 1
+					if (data.trials[i].correct_trial == 1){
+						correct += 1
+					}
 				}	
-			}
-			var accuracy = correct / total_trials
-			var missed_responses = (total_trials - sum_responses) / total_trials
-			var ave_rt = sum_rt / sum_responses
-		
-			if (accuracy > accuracy_thresh || practiceCount == practice_thresh){
-				feedback_text = '<div class = centerbox><p class = center-block-text>We will now start the test portion.</p>' + 
-				'<p class = block-text>Keep your gaze on the central \'+\', your ' + possible_responses[0][0] + ' on the ' + possible_responses[0][2] + ' your ' + possible_responses[1][0] + ' on the ' +  possible_responses[1][2] + ' and your ' + possible_responses[2][0] + ' on the ' +  possible_responses[0][2] + '</p>' + 
-				'<p class = center-block-text>Press <i>enter</i> to continue.</p></div>'
-				exp_stage = 'test'
-				block_stims = jsPsych.randomization.repeat(stimuli, numTrialsPerBlock / stimuli.length) 
-				return false
+			}	
+		}
+		var accuracy = correct / total_trials
+		var missed_responses = (total_trials - sum_responses) / total_trials
+		var ave_rt = sum_rt / sum_responses
+	
+		if (accuracy > accuracy_thresh || practiceCount == practice_thresh){
+			feedback_text = '<div class = centerbox><p class = center-block-text>We will now start the test portion.</p>' + 
+			'<p class = block-text>Keep your gaze on the central \'+\', your ' + possible_responses[0][0] + ' on the ' + possible_responses[0][2] + ' and your ' + possible_responses[1][0] + ' on the ' +  possible_responses[1][2] +  '</p>' + 
+			'<p class = center-block-text>Press <i>enter</i> to continue.</p></div>'
+			exp_stage = 'test'
+			block_stims = jsPsych.randomization.repeat(stimuli, numTrialsPerBlock / stimuli.length) 
+			return false
 
-			} else { 
-				feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!</p>"
-				if (accuracy < accuracy_thresh) {
-					feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + response_keys 
-				}
-				if (ave_rt > rt_thresh){
-					feedback_text += '<p class = block-text>You have been responding too slowly. Try to respond as quickly and accurately as possible.</p>'
-				}
-				if (missed_responses > missed_response_thresh){
-					feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
-				}
-				feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
-				practice_stims = jsPsych.randomization.repeat(stimuli, 1).slice(0, numPracticeTrials)
-				return true
+		} else { 
+			feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!</p>"
+			if (accuracy < accuracy_thresh) {
+				feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + response_keys 
 			}
+			if (ave_rt > rt_thresh){
+				feedback_text += '<p class = block-text>You have been responding too slowly. Try to respond as quickly and accurately as possible.</p>'
+			}
+			if (missed_responses > missed_response_thresh){
+				feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
+			}
+			feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
+			block_stims = jsPsych.randomization.repeat(stimuli, 1).slice(0, numPracticeTrials)
+			return true
 		}
 	}
-	return practiceNode
 }
 
-var get_testNode = function() {
-	var trial_num = 0
-	var testTrials = []
+var trial_num = 0
+var testTrials = []
 
-	for (i = 0; i < block_stims.length; i++) {
-		trial_num += 1
-		block_stims[i].data.trial_num = trial_num
-		second_fixation_gap = Math.floor(Math.random() * 1200) + 400 //CTI
+for (i = 0; i < numTrialsPerBlock; i++) {
+	trial_num += 1
 
-		testTrials.push(
-			getFixationBlock(first_fixation_gap),
-			getCueBlock(block_stims[i]),
-			getFixationBlock(second_fixation_gap),
-			getTrialBlock(block_stims[i]),
-			getFixationBlock(last_fixation_gap, practice=true) //idrk what this is for
-		)
+	trial_num += 1
+	var first_fixation_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: images.left.box + images.right.box + fixation,
+		choices: ['NO_KEYS'],
+		data: {
+			trial_id: 'fixation',
+			exp_stage: 'test'
+		},
+		post_trial_gap: 0,
+		stimulus_duration: first_fixation_gap,
+		trial_duration: first_fixation_gap,
 	}
-	// testTrials.push(attention_node)
-	// testTrials.push(rest_block)
-
-	var testCount = 0
-	var testNode = {
-		timeline: [feedback_block].concat(testTrials),
-		loop_function: function(data) {
-			testCount += 1
-		
-			var sum_rt = 0
-			var sum_responses = 0
-			var correct = 0
-			var total_trials = 0
-		
-			for (var i = 0; i < data.trials.length; i++){
-				if (data.trials[i].trial_id == 'stim' && data.trials[i].exp_stage == 'test') {
-					total_trials+=1
-					if (data.trials[i].rt != null){
-						sum_rt += data.trials[i].rt
-						sum_responses += 1
-						if (data.trials[i].correct_trial == 1){
-							correct += 1
-						}
-          			}
-				}
+	var cue_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: getCue, 
+		choices: ['NO_KEYS'], 
+		data: function () {
+			return {
+				trial_id: getStimData().cue_type,
+				exp_stage: 'test'
 			}
+		},
+		post_trial_gap: 0,
+		stimulus_duration: 500,
+		trial_duration: 500,
+		prompt: prompt_text
+	}
+	var second_fixation_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: images.left.box + images.right.box + fixation,
+		choices: ['NO_KEYS'],
+		data: {
+			trial_id: 'fixation',
+			exp_stage: 'test'
+		},
+		post_trial_gap: 0,
+		stimulus_duration: second_fixation_gap,
+		trial_duration: second_fixation_gap,
+		prompt: prompt_text,
+		on_finish: function() {second_fixation_gap = Math.floor(Math.random() * 1200) + 400}
+	}
+	var trial_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: getStim,
+		choices: choices,
+		data: function() {
+			return Object.assign({}, getStimData(), {
+				trial_id: 'stim',
+				exp_stage: 'test'})
+		},
+		trial_duration: 1000,
+		stimulus_duration: 1000,
+		response_ends_trial: false,
+		post_trial_gap: 0,
+		on_finish: appendData,
+		prompt: prompt_text
+	}
+	var last_fixation_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: images.left.box + images.right.box + fixation,
+		choices: ['NO_KEYS'],
+		data: {
+			trial_id: 'fixation',
+			exp_stage: 'test'
+		},
+		post_trial_gap: 0,
+		stimulus_duration: last_fixation_gap,
+		trial_duration: last_fixation_gap,
+		prompt: prompt_text,
+		on_finish: function() {second_fixation_gap = Math.floor(Math.random() * 1200) + 400}
+	}
+	practiceTrials.push(first_fixation_block, cue_block, second_fixation_block, trial_block, last_fixation_gap)
+}
+// testTrials.push(attention_node)
+// testTrials.push(rest_block)
 
-			var accuracy = correct / total_trials
-			var missed_responses = (total_trials - sum_responses) / total_trials
-			var ave_rt = sum_rt / sum_responses
-		
-			if (testCount == numTestBlocks) {
-				return false
-			} else {
-				feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!<br>" +
-				"You have completed: "+testCount+" out of "+numTestBlocks+" blocks of trials.</p>"
-
-				if (accuracy < accuracy_thresh){
-					feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: <br>' + response_keys
+var testCount = 0
+var testNode = {
+	timeline: [feedback_block].concat(testTrials),
+	loop_function: function(data) {
+		testCount += 1
+	
+		var sum_rt = 0
+		var sum_responses = 0
+		var correct = 0
+		var total_trials = 0
+	
+		for (var i = 0; i < data.trials.length; i++){
+			if (data.trials[i].trial_id == 'stim' && data.trials[i].exp_stage == 'test') {
+				total_trials+=1
+				if (data.trials[i].rt != null){
+					sum_rt += data.trials[i].rt
+					sum_responses += 1
+					if (data.trials[i].correct_trial == 1){
+						correct += 1
+					}
 				}
-				if (missed_responses > missed_response_thresh){
-					feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
-				}
-				if (ave_rt > rt_thresh){
-					feedback_text += '<p class = block-text>You have been responding too slowly. Try to respond as quickly and accurately as possible.</p>'
-				}
-				if (accuracy >= accuracy_thresh && missed_responses <= missed_response_thresh && ave_rt <= rt_thresh) {
-					feedback_text += '<p class = block-text>No feedback on this block.</p>'
-				}
-				feedback_text += '<p class = block-text>Press <i>enter</i> to continue.</p>'
-				block_stims = jsPsych.randomization.repeat(stimuli, numTrialsPerBlock / stimuli.length) 
-				return true
 			}
 		}
+
+		var accuracy = correct / total_trials
+		var missed_responses = (total_trials - sum_responses) / total_trials
+		var ave_rt = sum_rt / sum_responses
+	
+		if (testCount == numTestBlocks) {
+			return false
+		} else {
+			feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!<br>" +
+			"You have completed: "+testCount+" out of "+numTestBlocks+" blocks of trials.</p>"
+
+			if (accuracy < accuracy_thresh){
+				feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: <br>' + response_keys
+			}
+			if (missed_responses > missed_response_thresh){
+				feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
+			}
+			if (ave_rt > rt_thresh){
+				feedback_text += '<p class = block-text>You have been responding too slowly. Try to respond as quickly and accurately as possible.</p>'
+			}
+			if (accuracy >= accuracy_thresh && missed_responses <= missed_response_thresh && ave_rt <= rt_thresh) {
+				feedback_text += '<p class = block-text>No feedback on this block.</p>'
+			}
+			feedback_text += '<p class = block-text>Press <i>enter</i> to continue.</p>'
+			block_stims = jsPsych.randomization.repeat(stimuli, numTrialsPerBlock / stimuli.length) 
+			return true
+		}
 	}
-	return testNode
 }
+
 
 var fullscreen = {
 	type: jsPsychFullscreen,
@@ -591,15 +648,12 @@ spatial_cueing_rdoc_init = () => {
 	document.body.style.background = 'gray' //// CHANGE THIS
 
 	/* 24 practice trials. Included all nocue up trials, center cue up trials, double cue down trials, and 6 spatial trials (3 up, 3 down) */
-	practice_stims = jsPsych.randomization.repeat(stimuli, 1).slice(0, numPracticeTrials)
-	block_stims = jsPsych.randomization.repeat(stimuli, numTrialsPerBlock / stimuli.length) // jsPsych.randomization.repeat($.extend(true, [], test_stimuli), 1, true)
+	block_stims = jsPsych.randomization.repeat(stimuli, 1).slice(0, numPracticeTrials)
+	
 	spatial_cueing_rdoc_experiment.push(fullscreen)
 	spatial_cueing_rdoc_experiment.push(instruction_node);
-
-	spatial_cueing_rdoc_experiment.push(get_practiceNode())
-	// spatial_cueing_rdoc_experiment.push(rest_block)
-	spatial_cueing_rdoc_experiment.push(get_testNode())
-
+	spatial_cueing_rdoc_experiment.push(practiceNode)
+	spatial_cueing_rdoc_experiment.push(testNode)
 	spatial_cueing_rdoc_experiment.push(post_task_block)
 	spatial_cueing_rdoc_experiment.push(end_block)
 	spatial_cueing_rdoc_experiment.push(exit_fullscreen)

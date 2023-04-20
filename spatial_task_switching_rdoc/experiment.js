@@ -761,14 +761,10 @@ var spatial_task_switching_rdoc_init = () => {
 	stims = createTrialTypes(task_switches)
 
 	spatial_task_switching_rdoc_experiment.push(fullscreen)
-
 	spatial_task_switching_rdoc_experiment.push(instruction_node)
 	spatial_task_switching_rdoc_experiment.push(practiceNode)
-
 	spatial_task_switching_rdoc_experiment.push(testNode)
-
 	spatial_task_switching_rdoc_experiment.push(post_task_block)
 	spatial_task_switching_rdoc_experiment.push(end_block)
-
 	spatial_task_switching_rdoc_experiment.push(exit_fullscreen)
 }

@@ -466,209 +466,201 @@ var feedback_block = {
 /* ************************************ */
 /*        Set up timeline blocks        */
 /* ************************************ */
+var practiceTrials = []
+for (i = 0; i < practice_len + 3; i++) {	
 
-var get_practiceNode = function() {
-
-	var practiceTrials = []
-	for (i = 0; i < practice_len + 3; i++) {	
-
-		var practice_block = {
-			type: jsPsychHtmlKeyboardResponse,
-			stimulus: getStim,
-			data: {
-				trial_id: "practice_trial",
-				exp_stage: "practice"
-			},
-			choices: choices,
-			stimulus_duration: 1000, //1000
-			trial_duration: 2000, //2000
-			post_trial_gap: 0,
-			response_ends_trial: false,
-			prompt: prompt_text,
-			on_finish: appendData
-		}
-
-		var practice_feedback_block = {
-			type: jsPsychHtmlKeyboardResponse,
-			stimulus: function() {
-				var last = jsPsych.data.get().last(1).values()[0]
-				if (last.response == null) {
-					return '<div class = fb_box><div class = center-text><font size =20>Respond Faster!</font></div></div>'
-				} else if (last.correct_trial == 1) {
-					return '<div class = fb_box><div class = center-text><font size =20>Correct!</font></div></div>'
-				} else {
-					return '<div class = fb_box><div class = center-text><font size =20>Incorrect</font></div></div>'
-				}
-			},
-			data: {
-				exp_stage: "practice",
-				trial_id: "practice_feedback"
-			},
-			choices: ['NO_KEYS'],
-			stimulus_duration: 500,
-			trial_duration: 500,
-			prompt: prompt_text
-		}
-
-		practiceTrials.push(practice_block, practice_feedback_block)
+	var practice_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: getStim,
+		data: {
+			trial_id: "practice_trial",
+			exp_stage: "practice"
+		},
+		choices: choices,
+		stimulus_duration: 1000, //1000
+		trial_duration: 2000, //2000
+		post_trial_gap: 0,
+		response_ends_trial: false,
+		prompt: prompt_text,
+		on_finish: appendData
 	}
 
-	practiceCount = 0 //global 
-	var practiceNode = {
-		timeline: [feedback_block].concat(practiceTrials),
-		loop_function: function(data) {
-			practiceCount += 1
-			current_trial = 0
-		
-			var sum_rt = 0
-			var sum_responses = 0
-			var correct = 0
-			var total_trials = 0
-			var mismatch_press = 0
-		
-			for (var i = 0; i < data.trials.length; i++){
-				if (data.trials[i].trial_id == "practice_trial"){
-					total_trials+=1
-					if (data.trials[i].rt != null){
-						sum_rt += data.trials[i].rt
-						sum_responses += 1
-						if (data.trials[i].response == data.trials[i].correct_response){
-							correct += 1
-			
-						}
-					}
-					if (data.trials[i].response == possible_responses[1][1]){
-						mismatch_press += 1
-					}
-				}
+	var practice_feedback_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: function() {
+			var last = jsPsych.data.get().last(1).values()[0]
+			if (last.response == null) {
+				return '<div class = fb_box><div class = center-text><font size =20>Respond Faster!</font></div></div>'
+			} else if (last.correct_trial == 1) {
+				return '<div class = fb_box><div class = center-text><font size =20>Correct!</font></div></div>'
+			} else {
+				return '<div class = fb_box><div class = center-text><font size =20>Incorrect</font></div></div>'
 			}
-		
-			var accuracy = correct / total_trials
-			var missed_responses = (total_trials - sum_responses) / total_trials
-			var ave_rt = sum_rt / sum_responses
-			var mismatch_press_percentage = mismatch_press / total_trials
-
-			if (accuracy > accuracy_thresh || practiceCount == practice_thresh){
-				feedback_text = '<div class = centerbox>'+
-					'<p class = block-text>We will now begin the test portion.</p>'+
-					'<p class = block-text>Keep your ' + possible_responses[0][0] + ' on the ' + possible_responses[0][2] + ' and your ' + possible_responses[1][0] + ' on the ' + possible_responses[1][2] + '</p>' + 
-					'<p class = block-text>Once again, match the current letter to the letter that appeared either 1, 2, or 3 trials ago depending on the delay given to you for each block.'+
-					'Press your '+possible_responses[0][0]+' if they match, and your '+possible_responses[1][0]+' if they mismatch.</p>'+
-					'<p class = block-text>Your delay (the number of trials ago to which you compare the current letter) will change from block to block.</p>'+
-					'<p class = block-text>Capitalization does not matter, so "T" matches with "t". The first trial(s) will not match, because there was nothing before them.</p> '+	
-					'<p class = block-text>You will no longer see the rules, so memorize the instructions before you continue. Press <i>enter</i> to begin.</p>'+
-					'</div>'
-				delay = delays.pop()
-				stims = createTrialTypes(numTrialsPerBlock, delay)
-				return false
-		  
-			} else { 
-				feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!</p>"
-				if (accuracy < accuracy_thresh) {
-					feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + prompt_text_list 
-				}	
-				if (ave_rt > rt_thresh){
-					feedback_text += '<p class = block-text>You have been responding too slowly.' + speed_reminder + '</p>'
-				}
-				if (missed_responses > missed_response_thresh){
-					feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
-				}
-				if (mismatch_press_percentage >= 0.90){
-					feedback_text += '</p><p class = block-text>Please do not simply press your '+possible_responses[1][0]+' to every stimulus. Please try to identify the matches and press your '+possible_responses[0][0]+' when they occur.'
-				}
-				feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
-				stims = createTrialTypes(practice_len, delay)
-				return true
-			}
-		}
+		},
+		data: {
+			exp_stage: "practice",
+			trial_id: "practice_feedback"
+		},
+		choices: ['NO_KEYS'],
+		stimulus_duration: 500,
+		trial_duration: 500,
+		prompt: prompt_text
 	}
-	return practiceNode
+
+	practiceTrials.push(practice_block, practice_feedback_block)
 }
 
-var get_testNode = function() {
-	var testTrials = []
-	//testTrials.push(attention_node)
-	for (i = 0; i < numTrialsPerBlock + 3; i++) {
+var practiceCount = 0 
+var practiceNode = {
+	timeline: [feedback_block].concat(practiceTrials),
+	loop_function: function(data) {
+		practiceCount += 1
+		current_trial = 0
+	
+		var sum_rt = 0
+		var sum_responses = 0
+		var correct = 0
+		var total_trials = 0
+		var mismatch_press = 0
+	
+		for (var i = 0; i < data.trials.length; i++){
+			if (data.trials[i].trial_id == "practice_trial"){
+				total_trials+=1
+				if (data.trials[i].rt != null){
+					sum_rt += data.trials[i].rt
+					sum_responses += 1
+					if (data.trials[i].response == data.trials[i].correct_response){
+						correct += 1
 		
-		var test_block = {
-			type: jsPsychHtmlKeyboardResponse,
-			stimulus: getStim,
-			data: {
-				trial_id: "test_trial",
-				exp_stage: 'test'
-			},
-			choices: choices,
-			stimulus_duration: 1000, //1000
-			trial_duration: 2000, //2000
-			post_trial_gap: 0,
-			response_ends_trial: false,
-			on_finish: appendData
+					}
+				}
+				if (data.trials[i].response == possible_responses[1][1]){
+					mismatch_press += 1
+				}
+			}
 		}
-		testTrials.push(test_block)
-	}
+	
+		var accuracy = correct / total_trials
+		var missed_responses = (total_trials - sum_responses) / total_trials
+		var ave_rt = sum_rt / sum_responses
+		var mismatch_press_percentage = mismatch_press / total_trials
 
-	testCount = 0 //global
-	var testNode = {
-		timeline: [feedback_block].concat(testTrials),
-		loop_function: function(data) {
-			testCount += 1
-			current_trial = 0
+		if (accuracy > accuracy_thresh || practiceCount == practice_thresh){
+			feedback_text = '<div class = centerbox>'+
+				'<p class = block-text>We will now begin the test portion.</p>'+
+				'<p class = block-text>Keep your ' + possible_responses[0][0] + ' on the ' + possible_responses[0][2] + ' and your ' + possible_responses[1][0] + ' on the ' + possible_responses[1][2] + '</p>' + 
+				'<p class = block-text>Once again, match the current letter to the letter that appeared either 1, 2, or 3 trials ago depending on the delay given to you for each block.'+
+				'Press your '+possible_responses[0][0]+' if they match, and your '+possible_responses[1][0]+' if they mismatch.</p>'+
+				'<p class = block-text>Your delay (the number of trials ago to which you compare the current letter) will change from block to block.</p>'+
+				'<p class = block-text>Capitalization does not matter, so "T" matches with "t". The first trial(s) will not match, because there was nothing before them.</p> '+	
+				'<p class = block-text>You will no longer see the rules, so memorize the instructions before you continue. Press <i>enter</i> to begin.</p>'+
+				'</div>'
+			delay = delays.pop()
+			stims = createTrialTypes(numTrialsPerBlock, delay)
+			return false
+		
+		} else { 
+			feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!</p>"
+			if (accuracy < accuracy_thresh) {
+				feedback_text += '<p class = block-text>Your accuracy is low.  Remember: </p>' + prompt_text_list 
+			}	
+			if (ave_rt > rt_thresh){
+				feedback_text += '<p class = block-text>You have been responding too slowly.' + speed_reminder + '</p>'
+			}
+			if (missed_responses > missed_response_thresh){
+				feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
+			}
+			if (mismatch_press_percentage >= 0.90){
+				feedback_text += '</p><p class = block-text>Please do not simply press your '+possible_responses[1][0]+' to every stimulus. Please try to identify the matches and press your '+possible_responses[0][0]+' when they occur.'
+			}
+			feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
+			stims = createTrialTypes(practice_len, delay)
+			return true
+		}
+	}
+}
+
+var testTrials = []
+//testTrials.push(attention_node)
+for (i = 0; i < numTrialsPerBlock + 3; i++) {
+	
+	var test_block = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: getStim,
+		data: {
+			trial_id: "test_trial",
+			exp_stage: 'test'
+		},
+		choices: choices,
+		stimulus_duration: 1000, //1000
+		trial_duration: 2000, //2000
+		post_trial_gap: 0,
+		response_ends_trial: false,
+		on_finish: appendData
+	}
+	testTrials.push(test_block)
+}
+
+testCount = 0 //global
+var testNode = {
+	timeline: [feedback_block].concat(testTrials),
+	loop_function: function(data) {
+		testCount += 1
+		current_trial = 0
+		
+		var sum_rt = 0
+		var sum_responses = 0
+		var correct = 0
+		var total_trials = 0
+		var mismatch_press = 0
+
+		for (var i = 0; i < data.trials.length; i++){
+			if (data.trials[i].trial_id == "test_trial"){
+				total_trials+=1
+				if (data.trials[i].rt != null){
+					sum_rt += data.trials[i].rt
+					sum_responses += 1
+					if (data.trials[i].response == data.trials[i].correct_response){
+						correct += 1
+					}
+				}
+				if (data.trials[i].response == possible_responses[1][1]){
+					mismatch_press += 1
+				}
+			} 
+		}
+	
+		var accuracy = correct / total_trials
+		var missed_responses = (total_trials - sum_responses) / total_trials
+		var ave_rt = sum_rt / sum_responses
+		var mismatch_press_percentage = mismatch_press / total_trials
+	
+		if (testCount == numTestBlocks){
+			feedback_text += '<p class = block-text>Done with this test. Press <i>enter</i> to continue.<br> If you have been completing tasks continuously for an hour or more, please take a 15-minute break before starting again.</p>'
+			return false
+		} else {
+			feedback_text = "<p>Please take this time to read your feedback and to take a short break! Press <i>enter</i> to continue." +
+				"<br>You have completed " +testCount+ " out of " +numTestBlocks+ " blocks of trials.</p>"
+			if (accuracy < accuracy_thresh){
+				feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: </p>' + prompt_text_list 
+			}
+			if (missed_responses > missed_response_thresh){
+				feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
+			}
+
+			if (ave_rt > rt_thresh){
+				feedback_text += '<p class = block-text>You have been responding too slowly.</p>'
+			}
 			
-			var sum_rt = 0
-			var sum_responses = 0
-			var correct = 0
-			var total_trials = 0
-			var mismatch_press = 0
-
-			for (var i = 0; i < data.trials.length; i++){
-				if (data.trials[i].trial_id == "test_trial"){
-					total_trials+=1
-					if (data.trials[i].rt != null){
-						sum_rt += data.trials[i].rt
-						sum_responses += 1
-						if (data.trials[i].response == data.trials[i].correct_response){
-							correct += 1
-						}
-					}
-					if (data.trials[i].response == possible_responses[1][1]){
-						mismatch_press += 1
-					}
-				} 
+			if (mismatch_press_percentage >= 0.90){
+				feedback_text += '<p class = block-text>Please do not simply press your '+possible_responses[1][0]+' to every stimulus. Please try to identify the matches and press your '+possible_responses[0][0]+' when they occur.</p>'
 			}
-		
-			var accuracy = correct / total_trials
-			var missed_responses = (total_trials - sum_responses) / total_trials
-			var ave_rt = sum_rt / sum_responses
-			var mismatch_press_percentage = mismatch_press / total_trials
-		
-			if (testCount == numTestBlocks){
-				feedback_text += '<p class = block-text>Done with this test. Press <i>enter</i> to continue.<br> If you have been completing tasks continuously for an hour or more, please take a 15-minute break before starting again.</p>'
-				return false
-			} else {
-				feedback_text = "<p>Please take this time to read your feedback and to take a short break! Press <i>enter</i> to continue." +
-					"<br>You have completed " +testCount+ " out of " +numTestBlocks+ " blocks of trials.</p>"
-				if (accuracy < accuracy_thresh){
-					feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: </p>' + prompt_text_list 
-				}
-				if (missed_responses > missed_response_thresh){
-					feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
-				}
-
-				if (ave_rt > rt_thresh){
-					feedback_text += '<p class = block-text>You have been responding too slowly.</p>'
-				}
-				
-				if (mismatch_press_percentage >= 0.90){
-					feedback_text += '<p class = block-text>Please do not simply press your '+possible_responses[1][0]+' to every stimulus. Please try to identify the matches and press your '+possible_responses[0][0]+' when they occur.</p>'
-				}
-				feedback_text += "<p class = block-text><i>For the next round of trials, your delay is "+delay+"</i>.  Press <i>enter</i> to continue.</p>"
-				delay = delays.pop()
-				stims = createTrialTypes(numTrialsPerBlock, delay)
-				return true
-			}
+			feedback_text += "<p class = block-text><i>For the next round of trials, your delay is "+delay+"</i>.  Press <i>enter</i> to continue.</p>"
+			delay = delays.pop()
+			stims = createTrialTypes(numTrialsPerBlock, delay)
+			return true
 		}
 	}
-	return testNode
 }
 
 var fullscreen = {
@@ -700,12 +692,9 @@ var n_back_rdoc_init = () => {
 	n_back_rdoc_experiment.push(fullscreen)
 
 	n_back_rdoc_experiment.push(instruction_node)
-
-	n_back_rdoc_experiment.push(get_practiceNode());
-	n_back_rdoc_experiment.push(get_testNode());
-
+	n_back_rdoc_experiment.push(practiceNode);
+	n_back_rdoc_experiment.push(testNode);
 	n_back_rdoc_experiment.push(post_task_block);
 	n_back_rdoc_experiment.push(end_block);
-
 	n_back_rdoc_experiment.push(exit_fullscreen)
 }

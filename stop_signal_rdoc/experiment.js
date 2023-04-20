@@ -706,11 +706,9 @@ var stop_signal_rdoc_init = () => {
 	stims = createTrialTypes(practice_len)
 
 	stop_signal_rdoc_experiment.push(fullscreen)
-
 	stop_signal_rdoc_experiment.push(instruction_node)
 	stop_signal_rdoc_experiment.push(practiceStopNode)
 	stop_signal_rdoc_experiment.push(testNode);
-
 	stop_signal_rdoc_experiment.push(post_task_block);
 	stop_signal_rdoc_experiment.push(end_block);
 	stop_signal_rdoc_experiment.push(exit_fullscreen)

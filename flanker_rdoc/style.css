@@ -2,7 +2,7 @@
 /*********    RDoC/Network Default CSS Styles    *******/
 /*******************************************************/
 
-/* .display_stage {
+.display_stage {
     position: fixed;
     background: gray;
     left: 5vw;
@@ -16,8 +16,8 @@
 
 .display_stage > div, .display_stage > p {
   color: white;
-} */
-
+}
+/* 
 .jspsych-display-element {
   position: fixed;
   background: gray;
@@ -32,16 +32,7 @@
 
 .jspsych-display-element > div, .jspsych-display-element > p {
 color: white;
-}
-
-.flanker-text {
-	text-align: center;
-	font-size: 50px;
-	position: relative;
-    top: 50%; 
-    transform: translateY(-50%);
-    -webkit-transform: translateY(-50%);
-}
+} */
 
 .fb_box {
   width:35vw;

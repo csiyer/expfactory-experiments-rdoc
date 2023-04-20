@@ -8,6 +8,7 @@
                 "static/jspsych7/plugin-html-keyboard-response.js",
                 "static/jspsych7/plugin-survey-text.js",
                 "static/jspsych7/plugin-fullscreen.js",
+                "static/jspsych7/plugin-call-function.js",
                 "static/jspsych7/jspsych.css",
                 "static/css/default_style.css",
                 "experiment.js",

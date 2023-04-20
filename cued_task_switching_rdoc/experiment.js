@@ -274,9 +274,8 @@ var randomize_response_keys = true
 var response_keys = {key: [',','.'], key_name: ["index finger","middle finger"], key_description: ["comma", "period"]} // haven't implemented counterbalancing!!!
 var choices = response_keys.key
 var practice_length = 16 // must be divisible by 4
-var exp_len = 192 // must be divisible by 4
-var numTrialsPerBlock = 48 
-var numTestBlocks = exp_len / numTrialsPerBlock
+var numTrialsPerBlock = 48
+var numTestBlocks = 4
 
 var practice_thresh = 3 // 3 blocks of 16 trials
 var rt_thresh = 1000;
@@ -658,7 +657,6 @@ for (i = 0; i < numTrialsPerBlock + 1; i++) {
     on_finish: appendData
   };
 
-
   var test_block = {
     type: jsPsychHtmlKeyboardResponse,
     stimulus: getStim,
@@ -749,21 +747,18 @@ var cued_task_switching_rdoc_init = () => {
   document.body.style.background = 'gray' //// CHANGE THIS
 
   jsPsych.pluginAPI.preloadImages(images);
+  
 
   task_switches = jsPsych.randomization.repeat(task_switches_arr, practice_length / 4)
   task_switches.unshift({task_switch: 'na', cue_switch: 'na', go_no_go_type: jsPsych.randomization.repeat(['go','nogo'],1).pop()})
   stims = genStims(practice_length + 1)
 
   cued_task_switching_rdoc_experiment.push(fullscreen)
-
   cued_task_switching_rdoc_experiment.push(instruction_node)
-
   cued_task_switching_rdoc_experiment.push(practiceNode);
   cued_task_switching_rdoc_experiment.push(testNode);
-
   cued_task_switching_rdoc_experiment.push(post_task_block)
   cued_task_switching_rdoc_experiment.push(end_block)
-
   cued_task_switching_rdoc_experiment.push(exit_fullscreen)
 }
 
