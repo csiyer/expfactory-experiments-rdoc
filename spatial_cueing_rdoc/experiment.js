@@ -91,6 +91,20 @@ var getFeedback = function() {
 	return '<div class = bigbox><div class = picture_box><p class = block-text>' + feedback_text + '</font></p></div></div>' //<font color="white">
 }
 
+var getCue = function(){
+	currStim = block_stims.pop()
+	currStim.data.trial_num = trial_num
+	return currStim.cue_stimulus
+}
+
+var getStim = function() {
+ 	return currStim.stimulus
+}
+
+var getStimData = function() {
+	return currStim.data
+}
+
 /* ************************************ */
 /* Define experimental variables */
 /* ************************************ */
@@ -115,7 +129,6 @@ var choices = [possible_responses[0][1], possible_responses[1][1]]
 var trial_proportions = ['valid', 'valid', 'valid',  'invalid']
 
 var current_trial = 0
-var exp_stage = 'practice'
 var currStim = ''
 
 var fixation = '<div class = centerbox><div class = fixation style="font-size:100px">+</div></div>'
@@ -357,21 +370,6 @@ var feedback_block = {
 };
 
 
-var getCue = function(){
-	currStim = block_stims.pop()
-	currStim.data.trial_num = trial_num
-	return currStim.cue_stimulus
-}
-
-var getStim = function() {
- 	return currStim.stimulus
-}
-
-var getStimData = function() {
-	return currStim.data
-}
-
-
 // initialize
 var first_fixation_gap = 1000
 var second_fixation_gap = Math.floor(Math.random() * 1200) + 400; //CTI
@@ -380,7 +378,6 @@ var last_fixation_gap = 400
 var practiceTrials = []
 var trial_num = 0
 for (let i = 0; i < numPracticeTrials; i++) {
-
 	trial_num += 1
 	var first_fixation_block = {
 		type: jsPsychHtmlKeyboardResponse,
@@ -499,10 +496,7 @@ var practiceNode = {
 
 var trial_num = 0
 var testTrials = []
-
 for (i = 0; i < numTrialsPerBlock; i++) {
-	trial_num += 1
-
 	trial_num += 1
 	var first_fixation_block = {
 		type: jsPsychHtmlKeyboardResponse,
@@ -575,7 +569,7 @@ for (i = 0; i < numTrialsPerBlock; i++) {
 		prompt: prompt_text,
 		on_finish: function() {second_fixation_gap = Math.floor(Math.random() * 1200) + 400}
 	}
-	practiceTrials.push(first_fixation_block, cue_block, second_fixation_block, trial_block, last_fixation_gap)
+	testTrials.push(first_fixation_block, cue_block, second_fixation_block, trial_block, last_fixation_gap)
 }
 // testTrials.push(attention_node)
 // testTrials.push(rest_block)

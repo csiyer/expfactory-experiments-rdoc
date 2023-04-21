@@ -258,7 +258,7 @@ var response_grid = createResponseGrid()
 
 var prompt_text = '<div class = prompt_box>'+
 					  '<p class = center-block-text style = "font-size:16px; line-height:80%%;">Memorize all the letters!</p>' +
-					  '<p class = center-block-text style = "font-size:16px; line-height:80%%;">Equations: \'T\' for True and \'F\' for False.</li>' +
+					  '<p class = center-block-text style = "font-size:16px; line-height:80%%;">Equations: \'T\' for True and \'F\' for False.</p>' +
 				  '</div>'
 var star_stim = '<div class = centerbox><div class = digit-span-text>*</div></div>'
 
@@ -496,13 +496,6 @@ var set_stims_block = {
   func: setStims
 }
 
-var switch_block_type = {
-  type: jsPsychCallFunction,
-  func: function() {
-    block_type = ['simple', 'operation'].filter((x => x != block_type))[0] // switch block type
-  }
-}
-
 var practiceTrials = []
 for (let i = 0; i < numPracticeTrials; i++) {
   var shuffle_block_types = shuffleArray(['simple', 'operation'])
@@ -582,7 +575,7 @@ for (let i = 0; i < numTrialsPerBlock; i++) {
 
 var testCounmt = 0
 var testNode = {
-  timeline: [feedback_block].concat(testTrials, switch_block_type),
+  timeline: [feedback_block].concat(testTrials),
   loop_function: function(data) {
 
     testCount += 1		
@@ -613,23 +606,28 @@ var testNode = {
     var missed_responses = (total_trials - sum_trial_responses) / total_trials
     var missed_equations = (total_equations - sum_equation_responses) / total_equations
   
-    if (testCount == numTestBlocks){
-      return false
-    } else { 
-      feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!<br>" +
-					"You have completed: "+testCount+" out of "+numTestBlocks+" blocks of trials.</p>"
-      if (trial_accuracy < accuracy_thresh) {
-        feedback_text += '<p class = block-text>Your accuracy is low. Do your best to remember all the letters and report them in the order they appeared!</p>' 
-      }
+    if (testCount == numTestBlocks) {
+			return false
+		} else {
+			feedback_text = "<p class = block-text>Please take this time to read your feedback and to take a short break!<br>" +
+			"You have completed: "+testCount+" out of "+numTestBlocks+" blocks of trials.</p>"
+
+			if (accuracy < accuracy_thresh){
+				feedback_text += '<p class = block-text>Your accuracy is too low.  Remember: <br>' + response_keys
+			}
       if (equation_accuracy < accuracy_thresh) {
         feedback_text += '<p class = block-text>Your accuracy on the equations is low. Do your best to verify if the equation is true or false using the ' + equation_choices[0] + ' and ' + equation_choices[1] + ' keys.</p>'
       }
-      if (missed_responses > missed_response_thresh || missed_equations > missed_response_thresh){
+			if (missed_responses > missed_response_thresh || missed_equations > missed_response_thresh){
         feedback_text += '<p class = block-text>You have not been responding to some trials.  Please respond on every trial that requires a response.</p>'
       }
-      feedback_text += '<p class = block-text>We are going to repeat the practice round now. Press <i>enter</i> to begin.</p>'
-      return true
-    }
+			if (accuracy >= accuracy_thresh && missed_responses <= missed_response_thresh && equation_accuracy >= accuracy_thresh && missed_equations <= missed_response_thresh) {
+				feedback_text += '<p class = block-text>No feedback on this block.</p>'
+			}
+			feedback_text += '<p class = block-text>Press <i>enter</i> to continue.</p>'
+      block_type = ['simple', 'operation'].filter((x => x != block_type))[0] // switch block type
+			return true
+		}
   }
 }
 

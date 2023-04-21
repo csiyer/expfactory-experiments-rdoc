@@ -1,6 +1,6 @@
 [
     {
-        "name": "Attention Network Task",
+        "name": "Spatial Cueing RDoC",
         "template":"jspsych",
         "run": [
                 "static/js/math.min.js",
@@ -16,7 +16,7 @@
                 "style.css",
                 "experiment.js"
               ],
-        "exp_id": "spatial_cueing_task",
+        "exp_id": "spatial_cueing_rdoc",
         "cognitive_atlas_task_id": "tsk_4a57abb949d17",
         "contributors": [
                          "Ian Eisenberg",
@@ -38,7 +38,7 @@
         "deployment_variables":{"jspsych_init":
                                         {"fullscreen": true,
                                         "display_element": "getDisplayElement",
-                                        "on_trial_finish": "addID('spatial_cueing_task')"}
+                                        "on_trial_finish": "addID('spatial_cueing_rdoc')"}
                        }
    }
 ]
